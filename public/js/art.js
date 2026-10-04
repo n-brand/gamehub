@@ -201,7 +201,48 @@ function cubejump() {
   `);
 }
 
-const ART = { snake, 2048: game2048, connect4, cubejump, pairs, minesweeper, blocks, bricks };
+function watermelon() {
+  const face = (x, y, s) =>
+    `<ellipse cx="${x - s}" cy="${y}" rx="${s * 0.32}" ry="${s * 0.4}" fill="#183153"/><ellipse cx="${x + s}" cy="${y}" rx="${s * 0.32}" ry="${s * 0.4}" fill="#183153"/>` +
+    `<circle cx="${x - s * 1.1}" cy="${y - s * 0.16}" r="${s * 0.13}" fill="#fff"/><circle cx="${x + s * 0.9}" cy="${y - s * 0.16}" r="${s * 0.13}" fill="#fff"/>` +
+    `<path d="M${x - s * 0.35} ${y + s * 0.55}q${s * 0.35} ${s * 0.4} ${s * 0.7} 0" stroke="#183153" stroke-width="${s * 0.2}" fill="none" stroke-linecap="round"/>`;
+  const shine = (x, y, r) =>
+    `<ellipse cx="${x - r * 0.42}" cy="${y - r * 0.45}" rx="${r * 0.24}" ry="${r * 0.14}" transform="rotate(-40 ${x - r * 0.42} ${y - r * 0.45})" fill="#fff" opacity=".45"/>`;
+  return svg('#40c057', `
+    <circle cx="352" cy="46" r="70" fill="#fff" opacity=".1"/>
+    <circle cx="30" cy="250" r="44" fill="#fff" opacity=".08"/>
+    <rect x="78" y="118" width="244" height="200" fill="#fff9db"/>
+    <rect x="62" y="110" width="16" height="210" rx="8" fill="#e8590c"/>
+    <rect x="322" y="110" width="16" height="210" rx="8" fill="#e8590c"/>
+    <rect x="62" y="110" width="16" height="16" rx="8" fill="#ff922b"/>
+    <rect x="322" y="110" width="16" height="16" rx="8" fill="#ff922b"/>
+    <path d="M200 120 V176" stroke="#e8590c" stroke-width="3" stroke-dasharray="6 7" stroke-linecap="round" opacity=".45"/>
+    <circle cx="146" cy="242" r="66" fill="#51cf66"/>
+    <ellipse cx="146" cy="242" rx="22" ry="65" fill="none" stroke="#2b8a3e" stroke-width="8"/>
+    <ellipse cx="146" cy="242" rx="50" ry="66" fill="none" stroke="#2b8a3e" stroke-width="8"/>
+    <ellipse cx="146" cy="258" rx="30" ry="20" fill="#51cf66"/>
+    ${face(146, 252, 11)}${shine(146, 242, 66)}
+    <circle cx="282" cy="268" r="40" fill="#ffa94d"/>
+    <path d="M283 230q12-17 30-11q-11 15-30 11z" fill="#40c057"/>
+    ${face(282, 274, 8)}${shine(282, 268, 40)}
+    <circle cx="234" cy="215" r="26" fill="#7950f2"/>
+    <path d="M234 189q2-9 7-12" stroke="#8c6b4f" stroke-width="4" fill="none" stroke-linecap="round"/>
+    ${face(234, 219, 6)}${shine(234, 215, 26)}
+    <path d="M100 148l-12-8 9 12-14 2 15 4-5 10 9-8 4 11 1-12 11 5-8-10 12-6z" fill="#2f9e44"/>
+    <circle cx="100" cy="166" r="20" fill="#f03e3e"/>
+    <circle cx="92" cy="178" r="2" fill="#ffe066"/><circle cx="110" cy="176" r="2" fill="#ffe066"/><circle cx="101" cy="182" r="2" fill="#ffe066"/>
+    ${face(100, 166, 5)}${shine(100, 166, 20)}
+    <path d="M201 84q2-14 12-22" stroke="#5c940d" stroke-width="4" fill="none" stroke-linecap="round"/>
+    <circle cx="200" cy="100" r="17" fill="#e03131"/>
+    ${face(200, 103, 4)}${shine(200, 100, 17)}
+    <ellipse cx="200" cy="66" rx="40" ry="15" fill="#e9ecef"/>
+    <circle cx="183" cy="56" r="15" fill="#fff"/><circle cx="202" cy="48" r="19" fill="#fff"/><circle cx="220" cy="58" r="13" fill="#fff"/>
+    <ellipse cx="200" cy="64" rx="37" ry="11" fill="#fff"/>
+    <circle cx="194" cy="56" r="2.4" fill="#183153"/><circle cx="208" cy="56" r="2.4" fill="#183153"/>
+  `);
+}
+
+const ART = { snake, 2048: game2048, connect4, cubejump, watermelon, pairs, minesweeper, blocks, bricks };
 
 export function art(game) {
   const fn = ART[game.id];

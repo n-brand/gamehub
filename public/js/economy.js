@@ -9,7 +9,7 @@ import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js';
 
 const SUPABASE_JS = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 const AFTER_LOGIN_KEY = 'gamehub-after-login';
-const GAMES = ['snake', '2048', 'connect4', 'pairs', 'minesweeper', 'bricks', 'blocks', 'cubejump'];
+const GAMES = ['snake', '2048', 'connect4', 'pairs', 'minesweeper', 'bricks', 'blocks', 'cubejump', 'watermelon'];
 
 // Demo-Modus zum Ausprobieren ohne Supabase (Daten nur im Browser): ?demo=1 an die Adresse hängen,
 // ?demo=alles startet angemeldet mit allen Designs und reichlich Guthaben.

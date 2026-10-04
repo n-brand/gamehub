@@ -1065,6 +1065,40 @@ section h2 { font-size: 1.3rem; font-weight: 900; margin: 32px 0 14px; }
   .bf-next { height: 72px; }
 }
 
+/* ---------- Watermelon Drop ---------- */
+.wm-field {
+  position: relative;
+  flex: none;
+  width: min(100cqh * 2 / 3, 100cqi - 536px);
+  aspect-ratio: 2 / 3;
+  border-radius: 18px;
+  box-shadow: 0 8px 0 rgba(0, 0, 0, 0.18);
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: pointer;
+}
+/* Canvas absolut, damit nur das Seitenverhältnis die Feldhöhe bestimmt (nicht die Pixelgröße des Canvas) */
+.wm-field canvas { position: absolute; inset: 0; display: block; width: 100%; height: 100%; border-radius: inherit; }
+.wm-wide { grid-column: span 2; }
+.wm-box { padding: 10px 12px 12px; border-radius: 14px; background: rgba(0, 0, 0, 0.22); text-align: center; }
+.wm-box .gp-label { margin-bottom: 2px; text-align: left; }
+.wm-next { display: block; width: 104px; height: 104px; margin: 0 auto; }
+.wm-next-name { font-weight: 900; }
+.wm-cycle { display: block; width: 200px; height: 200px; margin: 0 auto; }
+@container (max-width: 1100px) {
+  .wm-side { display: none; }
+  .wm-field { width: min(100cqh * 2 / 3, 100cqi - 268px); }
+}
+@container (max-width: 760px) {
+  .wm-field { width: min(100cqi, (100cqh - 130px) * 2 / 3); }
+  .wm-wide, .wm-next-name { display: none; }
+  .wm .gp-stats { grid-template-columns: auto auto; }
+  .wm-box { padding: 4px 8px; }
+  .wm-next { width: 40px; height: 40px; }
+  .wm .gp-panel .btn { padding: 6px 12px; font-size: 0.85rem; }
+}
+
 /* ---------- Coins, Glücksrad, Shop und Erfolge ---------- */
 .btn:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
 .btn--sm { padding: 7px 14px; font-size: 0.9rem; }

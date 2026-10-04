@@ -30,6 +30,7 @@ const CATALOG = {
     ['cubejump', 'easy', 'win', 30, null, null, 28],
     ['cubejump', 'medium', 'win', 60, null, null, 27],
     ['cubejump', 'hard', 'win', 150, null, null, 26],
+    ['watermelon', '', 'score', 0, 25, 150, 10],
   ].map(([game, difficulty, result, coins, per_points, max_coins, min_seconds]) => ({ game, difficulty, result, coins, per_points, max_coins, min_seconds })),
   wheel_segments: [
     [0, 25, 0, 25], [1, 50, 0, 22], [2, 75, 0, 18], [3, 100, 0, 14],
@@ -37,7 +38,7 @@ const CATALOG = {
   ].map(([idx, coins, diamonds, weight]) => ({ idx, coins, diamonds, weight })),
   achievements: [
     ['first-game', null, 'Erste Runde', 'Spiele deine erste Runde.', 'plays_total', 1, 50, 0, 10],
-    ['all-games', null, 'Allrounder', 'Spiele jedes der 8 Spiele mindestens einmal.', 'games_played', 8, 200, 0, 20],
+    ['all-games', null, 'Allrounder', 'Spiele jedes der 9 Spiele mindestens einmal.', 'games_played', 9, 200, 0, 20],
     ['rounds-500', null, 'Dauerbrenner', 'Spiele 500 Runden.', 'plays_total', 500, 0, 5, 30],
     ['streak-30', null, 'Treue Seele', 'Drehe 30 Tage in Folge am Glücksrad.', 'spin_streak', 30, 0, 10, 40],
     ['snake-25', 'snake', 'Hungrig', 'Friss 25 Äpfel in einer Runde.', 'best_score', 25, 100, 0, 100],
@@ -58,6 +59,9 @@ const CATALOG = {
     ['jump-easy', 'cubejump', 'Erster Sprung', 'Schaffe in Würfelsprung das Level Leicht.', 'wins_easy', 1, 100, 0, 800],
     ['jump-medium', 'cubejump', 'Im Takt', 'Schaffe in Würfelsprung das Level Mittel.', 'wins_medium', 1, 200, 0, 810],
     ['jump-hard', 'cubejump', 'Würfelmeister', 'Schaffe in Würfelsprung das Level Schwer.', 'wins_hard', 1, 0, 5, 820],
+    ['melon-1000', 'watermelon', 'Fruchtsalat', 'Erreiche 1.000 Punkte in einer Runde.', 'best_score', 1000, 100, 0, 900],
+    ['melon-pineapple', 'watermelon', 'Tropisch', 'Lass eine Ananas entstehen.', 'max_fruit', 9, 200, 0, 910],
+    ['melon-melon', 'watermelon', 'Melonenmeister', 'Lass eine Wassermelone entstehen.', 'max_fruit', 11, 0, 10, 920],
   ].map(([id, game, name, description, stat, threshold, reward_coins, reward_diamonds, sort]) => ({
     id, game, name, description, stat, threshold, reward_coins, reward_diamonds, sort,
   })),
@@ -82,6 +86,10 @@ const CATALOG = {
     ['cube-ninja', 'cubejump', 'cubejump-skin', 'Ninja', 700, 0, 250],
     ['cube-diamond', 'cubejump', 'cubejump-skin', 'Diamant', 0, 5, 260],
     ['cube-crown', 'cubejump', 'cubejump-skin', 'König', 0, 8, 270],
+    ['watermelon-classic', 'watermelon', 'watermelon', 'Früchte', 0, 0, 300],
+    ['watermelon-night', 'watermelon', 'watermelon', 'Mitternacht', 400, 0, 310],
+    ['watermelon-balls', 'watermelon', 'watermelon', 'Bälle', 700, 0, 320],
+    ['watermelon-planets', 'watermelon', 'watermelon', 'Planeten', 0, 8, 330],
   ].map(([id, game, slot, name, price_coins, price_diamonds, sort]) => ({ id, game, slot, name, price_coins, price_diamonds, sort })),
 };
 
@@ -231,6 +239,7 @@ export function createDemoClient({ ownAll = false } = {}) {
         if ('maxTile' in p_extra) d.max_tile = Math.max(int(d.max_tile), int(p_extra.maxTile));
         if ('level' in p_extra) d.max_level = Math.max(int(d.max_level), int(p_extra.level));
         if ('quads' in p_extra) d.quads = int(d.quads) + int(p_extra.quads);
+        if ('maxFruit' in p_extra) d.max_fruit = Math.max(int(d.max_fruit), Math.min(int(p_extra.maxFruit), 11));
         if (p_game === 'pairs' && p_difficulty === 'hard' && p_result === 'win' && int(p_extra.moves) >= 15 && int(p_extra.moves) <= 25) {
           d.perfect30 = int(d.perfect30) + 1;
         }

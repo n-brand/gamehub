@@ -154,6 +154,20 @@ Ein Spiel kann mehrere Design-Plätze haben. `shop_items.slot` sagt, wo ein Arti
 | `cube-diamond` | Diamant | 5 Diamanten |
 | `cube-crown` | König | 8 Diamanten |
 
+### Nachtrag: Watermelon Drop
+
+Belohnung: 1 Coin pro 25 Punkte, höchstens 150 pro Runde (mindestens 10 s, höchstens 25 Punkte/s).
+Neue Statistik `max_fruit` (größte erreichte Stufe 1–11, aus `extra.maxFruit`). Erfolge: „Fruchtsalat“
+(1.000 Punkte, 100 Coins), „Tropisch“ (Ananas, 200 Coins), „Melonenmeister“ (Wassermelone, 10 Diamanten).
+„Allrounder“ zählt jetzt 9 Spiele.
+
+| ID | Design | Preis |
+|---|---|---|
+| `watermelon-classic` | Früchte | gratis |
+| `watermelon-night` | Mitternacht (Früchte bei Nacht) | 400 Coins |
+| `watermelon-balls` | Bälle (Murmel bis Wasserball) | 700 Coins |
+| `watermelon-planets` | Planeten (Pluto bis Sonne) | 8 Diamanten |
+
 ### Nachtrag: Spielmenü
 
 Vor jedem Spiel erscheint ein Menü (`public/js/game-menu.js`): Illustration, Rekord, „Spielen“,

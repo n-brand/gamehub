@@ -23,7 +23,7 @@ create table if not exists public.game_stats (
   plays integer not null default 0,
   wins integer not null default 0,
   best_score integer not null default 0,
-  data jsonb not null default '{}'::jsonb, -- wins_<stufe>, max_tile, max_level, quads, perfect30
+  data jsonb not null default '{}'::jsonb, -- wins_<stufe>, max_tile, max_level, quads, perfect30, max_fruit
   last_report timestamptz,
   primary key (user_id, game)
 );
@@ -294,7 +294,7 @@ begin
   if v_uid is null then
     raise exception 'Nicht angemeldet';
   end if;
-  if p_game not in ('snake', '2048', 'connect4', 'pairs', 'minesweeper', 'bricks', 'blocks', 'cubejump') then
+  if p_game not in ('snake', '2048', 'connect4', 'pairs', 'minesweeper', 'bricks', 'blocks', 'cubejump', 'watermelon') then
     raise exception 'Unbekanntes Spiel: %', p_game;
   end if;
   if p_result not in ('win', 'loss', 'draw', 'score') then
@@ -376,6 +376,10 @@ begin
     if v_extra ? 'quads' then
       v_data := jsonb_set(v_data, '{quads}',
         to_jsonb(public.int_from(v_data, 'quads') + least(public.int_from(v_extra, 'quads'), 1000)));
+    end if;
+    if v_extra ? 'maxFruit' then
+      v_data := jsonb_set(v_data, '{max_fruit}',
+        to_jsonb(greatest(public.int_from(v_data, 'max_fruit'), least(public.int_from(v_extra, 'maxFruit'), 11))));
     end if;
     if p_game = 'pairs' and v_diff = 'hard' and p_result = 'win'
        and public.int_from(v_extra, 'moves') between 15 and 25 then
@@ -594,7 +598,8 @@ insert into public.reward_rules (game, difficulty, result, coins, per_points, ma
   ('connect4',    'ultra',  'draw',   50, null, null, 20, null),
   ('cubejump',    'easy',   'win',    30, null, null, 28, null),
   ('cubejump',    'medium', 'win',    60, null, null, 27, null),
-  ('cubejump',    'hard',   'win',   150, null, null, 26, null)
+  ('cubejump',    'hard',   'win',   150, null, null, 26, null),
+  ('watermelon',  '',       'score',   0,   25, 150, 10,   25)
 on conflict (game, difficulty, result) do update set
   coins = excluded.coins,
   per_points = excluded.per_points,
@@ -615,7 +620,7 @@ on conflict (idx) do update set coins = excluded.coins, diamonds = excluded.diam
 
 insert into public.achievements (id, game, name, description, stat, threshold, reward_coins, reward_diamonds, sort) values
   ('first-game',     null,          'Erste Runde',               'Spiele deine erste Runde.',                               'plays_total',  1,    50,  0,  10),
-  ('all-games',      null,          'Allrounder',                'Spiele jedes der 8 Spiele mindestens einmal.',            'games_played', 8,   200,  0,  20),
+  ('all-games',      null,          'Allrounder',                'Spiele jedes der 9 Spiele mindestens einmal.',            'games_played', 9,   200,  0,  20),
   ('rounds-500',     null,          'Dauerbrenner',              'Spiele 500 Runden.',                                      'plays_total',  500,   0,  5,  30),
   ('streak-30',      null,          'Treue Seele',               'Drehe 30 Tage in Folge am Glücksrad.',                    'spin_streak',  30,    0, 10,  40),
   ('snake-25',       'snake',       'Hungrig',                   'Friss 25 Äpfel in einer Runde.',                          'best_score',   25,  100,  0, 100),
@@ -635,7 +640,10 @@ insert into public.achievements (id, game, name, description, stat, threshold, r
   ('c4-100',         'connect4',    'Seriensieger',              'Gewinne 100-mal gegen den Computer (jede Stärke).',       'wins',         100,   0, 10, 720),
   ('jump-easy',      'cubejump',    'Erster Sprung',             'Schaffe in Würfelsprung das Level Leicht.',               'wins_easy',    1,   100,  0, 800),
   ('jump-medium',    'cubejump',    'Im Takt',                   'Schaffe in Würfelsprung das Level Mittel.',               'wins_medium',  1,   200,  0, 810),
-  ('jump-hard',      'cubejump',    'Würfelmeister',             'Schaffe in Würfelsprung das Level Schwer.',               'wins_hard',    1,     0,  5, 820)
+  ('jump-hard',      'cubejump',    'Würfelmeister',             'Schaffe in Würfelsprung das Level Schwer.',               'wins_hard',    1,     0,  5, 820),
+  ('melon-1000',     'watermelon',  'Fruchtsalat',               'Erreiche 1.000 Punkte in einer Runde.',                   'best_score',   1000, 100,  0, 900),
+  ('melon-pineapple','watermelon',  'Tropisch',                  'Lass eine Ananas entstehen.',                             'max_fruit',    9,   200,  0, 910),
+  ('melon-melon',    'watermelon',  'Melonenmeister',            'Lass eine Wassermelone entstehen.',                       'max_fruit',    11,    0, 10, 920)
 on conflict (id) do update set
   game = excluded.game,
   name = excluded.name,
@@ -666,7 +674,11 @@ insert into public.shop_items (id, game, slot, name, price_coins, price_diamonds
   ('cube-robot',       'cubejump', 'cubejump-skin',  'Roboter',         500,  0, 240),
   ('cube-ninja',       'cubejump', 'cubejump-skin',  'Ninja',           700,  0, 250),
   ('cube-diamond',     'cubejump', 'cubejump-skin',  'Diamant',           0,  5, 260),
-  ('cube-crown',       'cubejump', 'cubejump-skin',  'König',             0,  8, 270)
+  ('cube-crown',       'cubejump', 'cubejump-skin',  'König',             0,  8, 270),
+  ('watermelon-classic', 'watermelon', 'watermelon', 'Früchte',       0,  0, 300),
+  ('watermelon-night',   'watermelon', 'watermelon', 'Mitternacht', 400,  0, 310),
+  ('watermelon-balls',   'watermelon', 'watermelon', 'Bälle',       700,  0, 320),
+  ('watermelon-planets', 'watermelon', 'watermelon', 'Planeten',      0,  8, 330)
 on conflict (id) do update set
   game = excluded.game,
   slot = excluded.slot,

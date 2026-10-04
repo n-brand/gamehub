@@ -1,9 +1,12 @@
 // Aussehen der Shop-Designs. Preis und Besitz stehen in der Datenbank (shop_items);
 // hier steht nur, wie ein Design aussieht – genutzt vom Spiel und von der Shop-Vorschau.
+// Watermelon Drop hat wegen der vielen Motive ein eigenes Modul (watermelon-art.js).
 //
 // Snake-Design: board = Schachbrett-Farben, hud = Leiste über dem Feld, apple = Apfelfarbe,
 // body/edge(i, n, t) = Farbe von Segment i (0 = Kopf) bei n Segmenten zur Zeit t (ms),
 // uniform = alle Segmente gleich (wird als ein Pfad gezeichnet), glow = Leuchtfarbe, sparkle = Funkeln.
+
+import { drawWatermelonPreview } from './watermelon-art.js';
 
 const CLASSIC_BOARD = ['#aad751', '#a2d149'];
 
@@ -506,6 +509,7 @@ export function drawSkinPreview(canvas, id, t = 0) {
 export function drawPreview(canvas, id, t = 0) {
   if (id.startsWith('cube-')) drawSkinPreview(canvas, id, t);
   else if (id.startsWith('cubejump-')) drawCubePreview(canvas, id, t);
+  else if (id.startsWith('watermelon-')) drawWatermelonPreview(canvas, id, t);
   else drawSnakePreview(canvas, id, t);
 }
 
