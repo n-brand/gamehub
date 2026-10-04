@@ -128,7 +128,6 @@ main {
 .badge--alt {
   background: var(--on-accent);
   color: var(--accent);
-  box-shadow: inset 0 0 0 2px var(--accent);
 }
 .tile .badge { top: 10px; left: auto; right: 10px; transform: none; font-size: 0.72rem; padding: 3px 12px; }
 
