@@ -6,10 +6,48 @@ import { drawSnakePreview } from './designs.js';
 
 // ---------- Symbole ----------
 
-export const COIN =
-  '<svg class="i-coin" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#fcc419"/><circle cx="12" cy="12" r="6.5" fill="none" stroke="#f59f00" stroke-width="2"/><circle cx="9" cy="8.5" r="1.6" fill="#fff" opacity=".7"/></svg>';
-export const DIAMOND =
-  '<svg class="i-diamond" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 3h11L22 9 12 21 2 9Z" fill="#66d9e8"/><path d="M2 9h20M8.5 3 7 9l5 12 5-12-1.5-6M7 9l5-6 5 6" fill="none" stroke="#15aabf" stroke-width="1.3" stroke-linejoin="round"/></svg>';
+// Münze und Diamant als SVG-Bausteine – einheitlich in Kopfzeile, Preisen und Glücksrad
+function starPath(r) {
+  let d = '';
+  for (let i = 0; i < 10; i++) {
+    const a = -Math.PI / 2 + (i * Math.PI) / 5;
+    const rr = i % 2 ? r * 0.45 : r;
+    d += `${i ? 'L' : 'M'}${(Math.cos(a) * rr).toFixed(2)} ${(Math.sin(a) * rr).toFixed(2)}`;
+  }
+  return `${d}Z`;
+}
+
+// Goldmünze mit Rand unten, Prägering, Stern und Glanzbogen (Radius r, Mitte x/y)
+function coinShape(x, y, r) {
+  const n = (v) => v.toFixed(2);
+  return (
+    `<g transform="translate(${n(x)} ${n(y)})">` +
+    `<circle cy="${n(r * 0.16)}" r="${n(r)}" fill="#e67700"/>` +
+    `<circle r="${n(r)}" fill="#fcc419"/>` +
+    `<circle r="${n(r * 0.7)}" fill="#ffd43b" stroke="#f59f00" stroke-width="${n(r * 0.14)}"/>` +
+    `<path d="${starPath(r * 0.4)}" fill="#f59f00"/>` +
+    `<path d="M${n(-r * 0.66)} ${n(-r * 0.12)}A${n(r * 0.68)} ${n(r * 0.68)} 0 0 1 ${n(-r * 0.12)} ${n(-r * 0.66)}" fill="none" stroke="#fff" stroke-opacity=".85" stroke-width="${n(r * 0.13)}" stroke-linecap="round"/>` +
+    '</g>'
+  );
+}
+
+// Geschliffener Diamant mit hellen und dunklen Facetten (Grundgröße 20 × 18, Faktor s)
+function gemShape(x, y, s) {
+  return (
+    `<g transform="translate(${x} ${y - s}) scale(${s})">` +
+    '<path d="M-10-2.5-5.5-8h11l4.5 5.5Z" fill="#99e9f2"/>' +
+    '<path d="M-5.5-8-10-2.5h6.5Z" fill="#c5f6fa"/>' +
+    '<path d="M5.5-8 10-2.5H3.5Z" fill="#66d9e8"/>' +
+    '<path d="M-10-2.5H10L0 10Z" fill="#3bc9db"/>' +
+    '<path d="M-10-2.5h6.5L0 10Z" fill="#66d9e8"/>' +
+    '<path d="M3.5-2.5H10L0 10Z" fill="#15aabf"/>' +
+    '<path d="M-6.6-4.4-4.6-6.8" stroke="#fff" stroke-width="1.3" stroke-linecap="round"/>' +
+    '</g>'
+  );
+}
+
+export const COIN = `<svg class="i-coin" viewBox="-12 -12 24 24" aria-hidden="true">${coinShape(0, -0.8, 10)}</svg>`;
+export const DIAMOND = `<svg class="i-diamond" viewBox="-12 -12 24 24" aria-hidden="true">${gemShape(0, 0, 1.05)}</svg>`;
 const GIFT =
   '<svg class="i-gift" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 7.2C10.6 4.4 7.4 3.4 6.4 5.1c-.9 1.6 1.4 2.4 5.6 2.1Zm0 0c1.4-2.8 4.6-3.8 5.6-2.1.9 1.6-1.4 2.4-5.6 2.1Z" fill="#fcc419"/><rect x="3.5" y="11" width="17" height="10" rx="2" fill="#ff8787"/><rect x="2.5" y="7.5" width="19" height="4.5" rx="1.5" fill="#fa5252"/><rect x="10.5" y="7.5" width="3" height="13.5" fill="#fcc419"/></svg>';
 const TROPHY =
@@ -65,7 +103,7 @@ export function toast({ icon = '', title, text = '', kind = '', action = null, d
 function openModal(html, { className = '' } = {}) {
   const backdrop = document.createElement('div');
   backdrop.className = 'modal-backdrop';
-  backdrop.innerHTML = `<div class="modal ${className}" role="dialog" aria-modal="true"><button type="button" class="modal-close" data-close aria-label="Schließen">×</button>${html}</div>`;
+  backdrop.innerHTML = `<div class="modal ${className}" role="dialog" aria-modal="true"><button type="button" class="modal-close" data-close aria-label="Schließen"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 6.5l11 11m0-11-11 11" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg></button>${html}</div>`;
   const close = () => {
     document.removeEventListener('keydown', onKey);
     backdrop.classList.add('is-out');
@@ -230,11 +268,13 @@ function wheelSvg(segments) {
     const am = rad(mid);
     const dark = color === JACKPOT_COLOR;
     const ink = dark ? '#ffd43b' : '#183153';
-    const icon = s.diamonds
-      ? `<path d="M-7 -3h14l4 5-11 13-11-13Z" transform="translate(0 6) scale(.8)" fill="#66d9e8" stroke="#15aabf" stroke-width="1.5"/>`
-      : `<circle cx="0" cy="12" r="7.5" fill="#fcc419" stroke="#f59f00" stroke-width="2"/>`;
-    labels += `<g transform="translate(${C + R * 0.64 * Math.cos(am)} ${C + R * 0.64 * Math.sin(am)}) rotate(${mid})">
-      <text y="-4" text-anchor="middle" font-size="${s.diamonds ? 22 : 20}" font-weight="900" fill="${ink}">${s.diamonds || s.coins}</text>${icon}</g>`;
+    const halo = dark ? '#3b1f8f' : '#ffffff';
+    // Mehr Symbole = höherer Gewinn: 1–2 Münzen, ab 250 ein Münzhaufen, beim Jackpot drei Diamanten
+    const icons = s.diamonds
+      ? (s.diamonds >= 5 ? [[-10, 19, 0.8], [10, 19, 0.8], [0, 11, 1]] : [[0, 15, 1.05]]).map(([x, y, k]) => gemShape(x, y, k))
+      : (s.coins >= 250 ? [[-9, 20], [9, 20], [0, 11]] : s.coins >= 100 ? [[-7.5, 16], [7.5, 16]] : [[0, 16]]).map(([x, y]) => coinShape(x, y, 9));
+    labels += `<g transform="translate(${C + R * 0.6 * Math.cos(am)} ${C + R * 0.6 * Math.sin(am)}) rotate(${mid})">
+      <text y="-10" text-anchor="middle" dominant-baseline="middle" font-size="${s.diamonds ? 24 : 21}" font-weight="900" fill="${ink}" stroke="${halo}" stroke-width="4.5" stroke-linejoin="round" paint-order="stroke">${s.diamonds || s.coins}</text>${icons.join('')}</g>`;
   });
   let ticks = '';
   for (let i = 0; i < segments.length; i++) {

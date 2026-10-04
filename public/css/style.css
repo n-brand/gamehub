@@ -1245,14 +1245,16 @@ section h2 { font-size: 1.3rem; font-weight: 900; margin: 32px 0 14px; }
   right: 12px;
   width: 38px;
   height: 38px;
+  display: grid;
+  place-items: center;
+  padding: 0;
   border: 0;
   border-radius: 50%;
   background: transparent;
   color: var(--muted);
-  font-size: 1.7rem;
-  line-height: 1;
   cursor: pointer;
 }
+.modal-close svg { display: block; width: 20px; height: 20px; }
 .modal-close:hover { background: rgba(127, 127, 127, 0.15); color: var(--navy); }
 .modal-actions { display: flex; justify-content: center; gap: 12px; }
 .modal--wheel { width: min(100%, 470px); overflow-x: hidden; }
