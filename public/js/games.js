@@ -44,6 +44,18 @@ export const GAMES = [
     available: true,
   },
   {
+    id: 'cubejump',
+    title: 'Würfelsprung',
+    categories: ['Geschick', 'Action'],
+    teaser: 'Spring im Takt über Stacheln – schaffst du alle drei Level bis 100 %?',
+    description: 'Dein Würfel rast von selbst durch das Level, du bestimmst nur, wann er springt. Weich Stacheln aus, lande auf Blöcken und nutze gelbe Sprungplatten und Ringe. Jedes Level ist bei jedem Versuch gleich: Merk dir die Stellen und arbeite dich bis 100 % vor.',
+    controls: 'Leertaste, ↑ oder Klick zum Springen – gedrückt halten springt bei jeder Landung erneut. Gelbe Ringe in der Luft anklicken. P pausiert. Im Shop gibt es Themes für Würfel und Level.',
+    theme: { bg: '#f06595', edge: '#c2255c', ink: '#ffffff' },
+    badge: 'NEU',
+    featured: true,
+    available: true,
+  },
+  {
     id: 'pairs',
     title: 'Paare finden',
     categories: ['Puzzle', 'Klassiker'],

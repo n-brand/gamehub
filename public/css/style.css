@@ -136,12 +136,13 @@ main {
 .hero h1 { margin: 0; font-size: 2.6rem; font-weight: 900; letter-spacing: -0.02em; }
 .hero p { margin: 6px 0 0; font-size: 1.1rem; color: var(--muted); }
 
+/* Feature-Karten teilen sich die Breite (max. ~380px je Karte bei 4 Stück), damit keine allein umbricht */
 .features {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 380px));
-  justify-content: center;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 28px;
-  margin: 36px 0 16px;
+  max-width: 1600px;
+  margin: 36px auto 16px;
 }
 .feature {
   --foot: color-mix(in srgb, var(--bg) 65%, var(--edge));
@@ -996,6 +997,24 @@ section h2 { font-size: 1.3rem; font-weight: 900; margin: 32px 0 14px; }
 .bk-lives { display: flex; align-items: center; gap: 2px; min-height: 1.55rem; color: #fff; }
 @container (max-width: 760px) {
   .bk-field { width: min(100cqi, (100cqh - 170px) * 4 / 3); }
+}
+
+/* ---------- Würfelsprung ---------- */
+.cj-field {
+  position: relative;
+  flex: none;
+  width: min(100cqi - 268px, 100cqh * 16 / 9);
+  aspect-ratio: 16 / 9;
+  border-radius: 18px;
+  box-shadow: 0 8px 0 rgba(0, 0, 0, 0.18);
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: pointer;
+}
+.cj-field canvas { display: block; width: 100%; height: 100%; border-radius: inherit; }
+@container (max-width: 760px) {
+  .cj-field { width: min(100cqi, (100cqh - 170px) * 16 / 9); }
 }
 
 /* ---------- Blockfall ---------- */

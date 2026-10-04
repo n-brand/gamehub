@@ -178,7 +178,30 @@ function bricks() {
   `);
 }
 
-const ART = { snake, 2048: game2048, connect4, pairs, minesweeper, blocks, bricks };
+function cubejump() {
+  const spikeAt = (x) =>
+    `<path d="M${x} 230 ${x + 22} 186 ${x + 44} 230Z" fill="#1b1e3b"/><path d="M${x + 13} 227 ${x + 22} 204 ${x + 31} 227Z" fill="#fff" opacity=".35"/>`;
+  return svg('#f06595', `
+    <rect x="-10" y="40" width="70" height="70" rx="8" fill="#fff" opacity=".12" transform="rotate(20 25 75)"/>
+    <rect x="300" y="18" width="90" height="90" rx="10" fill="#fff" opacity=".1" transform="rotate(-15 345 63)"/>
+    <rect y="230" width="400" height="70" fill="#c2255c"/>
+    <rect y="227" width="400" height="5" fill="#fff" opacity=".85"/>
+    ${spikeAt(196)}${spikeAt(240)}
+    <circle cx="325" cy="118" r="20" fill="#ffd43b" fill-opacity=".25" stroke="#ffd43b" stroke-width="6"/>
+    <path d="M50 226Q100 110 150 104" fill="none" stroke="#fff" stroke-width="3" stroke-dasharray="2 10" stroke-linecap="round" opacity=".8"/>
+    <rect x="72" y="150" width="11" height="11" fill="#fff" opacity=".55"/>
+    <rect x="92" y="128" width="9" height="9" fill="#fff" opacity=".4"/>
+    <g transform="rotate(20 150 112)">
+      <rect x="122" y="84" width="56" height="56" rx="9" fill="#f08c00"/>
+      <rect x="122" y="84" width="56" height="50" rx="9" fill="#ffd43b"/>
+      <rect x="133" y="95" width="34" height="29" rx="5" fill="#ffe066"/>
+      <rect x="139" y="103" width="7" height="8" fill="#183153"/><rect x="154" y="103" width="7" height="8" fill="#183153"/>
+      <rect x="141" y="116" width="18" height="4" fill="#183153"/>
+    </g>
+  `);
+}
+
+const ART = { snake, 2048: game2048, connect4, cubejump, pairs, minesweeper, blocks, bricks };
 
 export function art(game) {
   const fn = ART[game.id];

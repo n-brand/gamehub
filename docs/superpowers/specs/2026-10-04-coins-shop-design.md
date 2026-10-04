@@ -124,6 +124,19 @@ Seite `#/erfolge` mit Fortschrittsbalken; Freischaltung als Einblendung.
 - Aussehen der Designs liegt im Code (`public/js/designs.js`, auch für die Vorschau genutzt),
   Preise und Besitz in der Datenbank.
 
+### Nachtrag: Würfelsprung-Themes
+
+| ID | Theme | Preis |
+|---|---|---|
+| `cubejump-classic` | Klassisch (Level-Farben) | gratis |
+| `cubejump-sunset` | Sonnenuntergang | 400 Coins |
+| `cubejump-ice` | Eis | 600 Coins |
+| `cubejump-neon` | Neon (leuchtend) | 800 Coins |
+| `cubejump-lava` | Lava | 5 Diamanten |
+| `cubejump-gold` | Gold (funkelnd) | 10 Diamanten |
+
+Würfelsprung-Belohnung pro geschafftem Level: Leicht 30, Mittel 60, Schwer 150 Coins; Erfolge für jedes Level (Schwer: 5 Diamanten). „Allrounder“ zählt jetzt 8 Spiele.
+
 ## Oberfläche
 
 - Kopfzeile: Kontostand (Coins, Diamanten), Geschenk-Symbol für den täglichen Bonus (wackelt mit Punkt, solange abholbar), Links „Shop“ und „Erfolge“,

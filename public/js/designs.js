@@ -203,6 +203,157 @@ export function drawApple(ctx, x, y, r, color) {
   ctx.restore();
 }
 
+// ---------- Würfelsprung-Themes ----------
+// sky = Himmel oben/unten (null = Farben des Levels), ground/line = Boden und Bodenkante,
+// obstacle/outline/shine = Hindernisse (shine als "r, g, b" für Glanz im Takt), shapes = Hintergrundformen,
+// cube = [Körper, Kante unten, Innenfläche, Gesicht], glow = Leuchten, sparkle = Funkeln
+
+export const CUBE_THEMES = {
+  'cubejump-classic': {
+    sky: null, ground: null, line: '#ffffff', obstacle: '#1b1e3b', shine: '255, 255, 255', shapes: '#ffffff',
+    cube: ['#ffd43b', '#f08c00', '#ffe066', '#183153'], trail: 'rgba(255, 255, 255, 0.8)',
+  },
+  'cubejump-sunset': {
+    sky: ['#5f3dc4', '#ff922b'], ground: '#862e9c', line: '#ffd8a8', obstacle: '#3b1f5a', shine: '255, 216, 168', shapes: '#ffd8a8',
+    cube: ['#ff922b', '#d9480f', '#ffc078', '#3b1f5a'], trail: 'rgba(255, 216, 168, 0.85)',
+  },
+  'cubejump-ice': {
+    sky: ['#4dabf7', '#e7f5ff'], ground: '#1c7ed6', line: '#ffffff', obstacle: '#1864ab', shine: '231, 245, 255', shapes: '#ffffff',
+    cube: ['#f8f9fa', '#74c0fc', '#ffffff', '#1864ab'], trail: 'rgba(255, 255, 255, 0.9)',
+  },
+  'cubejump-neon': {
+    sky: ['#0b0d1f', '#1a1240'], ground: '#0b0d1f', line: '#22d3ee', obstacle: '#0b0d1f', outline: '#f72585', shine: '247, 37, 133', shapes: '#22d3ee',
+    cube: ['#22d3ee', '#0e7490', '#a5f3fc', '#0b0d1f'], trail: 'rgba(34, 211, 238, 0.9)', glow: '#22d3ee',
+  },
+  'cubejump-lava': {
+    sky: ['#2b0505', '#7a1010'], ground: '#e8590c', line: '#ffd43b', obstacle: '#1a0303', shine: '255, 146, 43', shapes: '#ff922b',
+    cube: ['#fa5252', '#a61e1e', '#ff8787', '#1a0303'], trail: 'rgba(255, 146, 43, 0.9)', glow: '#ff922b',
+  },
+  'cubejump-gold': {
+    sky: ['#0d0d0d', '#2b2b2b'], ground: '#161616', line: '#fcc419', obstacle: '#000000', outline: '#fcc419', shine: '252, 196, 25', shapes: '#fcc419',
+    cube: ['#fcc419', '#b07d00', '#ffe066', '#111111'], trail: 'rgba(252, 196, 25, 0.9)', sparkle: true,
+  },
+};
+
+export function cubeTheme(id) {
+  return CUBE_THEMES[id] || CUBE_THEMES['cubejump-classic'];
+}
+
+// Würfel mit Mittelpunkt (cx, cy), Kantenlänge size, Drehung in Grad
+export function drawCube(ctx, cx, cy, size, angle, theme, t = 0) {
+  const [body, shade, inner, face] = theme.cube;
+  const s = size;
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate((angle * Math.PI) / 180);
+  if (theme.glow) {
+    ctx.shadowColor = theme.glow;
+    ctx.shadowBlur = s * 0.45;
+  }
+  ctx.fillStyle = shade;
+  ctx.beginPath();
+  ctx.roundRect(-s / 2, -s / 2, s, s, s * 0.16);
+  ctx.fill();
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = body;
+  ctx.beginPath();
+  ctx.roundRect(-s / 2, -s / 2, s, s * 0.89, s * 0.16);
+  ctx.fill();
+  ctx.fillStyle = inner;
+  ctx.beginPath();
+  ctx.roundRect(-s * 0.3, -s * 0.3, s * 0.6, s * 0.52, s * 0.09);
+  ctx.fill();
+  ctx.fillStyle = face;
+  ctx.fillRect(-s * 0.2, -s * 0.15, s * 0.12, s * 0.14);
+  ctx.fillRect(s * 0.08, -s * 0.15, s * 0.12, s * 0.14);
+  ctx.fillRect(-s * 0.16, s * 0.08, s * 0.32, s * 0.07);
+  if (theme.sparkle) {
+    const phase = (t / 900) % 1;
+    const glow = Math.sin(phase * Math.PI);
+    const r = s * 0.22 * glow;
+    const x = s * 0.28;
+    const y = -s * 0.3;
+    ctx.fillStyle = `rgba(255, 255, 255, ${0.95 * glow})`;
+    ctx.beginPath();
+    ctx.moveTo(x, y - r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.quadraticCurveTo(x, y, x, y + r);
+    ctx.quadraticCurveTo(x, y, x - r, y);
+    ctx.quadraticCurveTo(x, y, x, y - r);
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+// Shop-Vorschau: Himmel, Boden, Stacheln, Ring und springender Würfel
+export function drawCubePreview(canvas, id, t = 0) {
+  const ctx = canvas.getContext('2d');
+  const theme = cubeTheme(id);
+  const w = canvas.width;
+  const h = canvas.height;
+  const b = h / 5;
+  const groundY = h - b * 1.1;
+  const [top, bottom] = theme.sky || ['#7048e8', '#f06595'];
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  const g = ctx.createLinearGradient(0, 0, 0, groundY);
+  g.addColorStop(0, top);
+  g.addColorStop(1, bottom);
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, w, groundY);
+  ctx.globalAlpha = 0.12;
+  ctx.fillStyle = theme.shapes;
+  for (let i = 0; i < 3; i++) {
+    ctx.save();
+    ctx.translate(40 + i * 120, 40 + (i % 2) * 40);
+    ctx.rotate(0.4 + i);
+    ctx.fillRect(-26, -26, 52, 52);
+    ctx.restore();
+  }
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = theme.ground || '#5f3dc4';
+  ctx.fillRect(0, groundY, w, h - groundY);
+  ctx.fillStyle = theme.line;
+  ctx.fillRect(0, groundY - 2, w, 4);
+  // Stacheln
+  for (const x of [b * 3.2, b * 4.2]) {
+    ctx.fillStyle = theme.obstacle;
+    ctx.beginPath();
+    ctx.moveTo(x, groundY);
+    ctx.lineTo(x + b / 2, groundY - b * 0.9);
+    ctx.lineTo(x + b, groundY);
+    ctx.closePath();
+    ctx.fill();
+    if (theme.outline) {
+      ctx.strokeStyle = theme.outline;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+    ctx.fillStyle = `rgba(${theme.shine}, 0.45)`;
+    ctx.beginPath();
+    ctx.moveTo(x + b * 0.3, groundY - 4);
+    ctx.lineTo(x + b / 2, groundY - b * 0.6);
+    ctx.lineTo(x + b * 0.7, groundY - 4);
+    ctx.closePath();
+    ctx.fill();
+  }
+  // Ring
+  ctx.lineWidth = 5;
+  ctx.strokeStyle = '#ffd43b';
+  ctx.beginPath();
+  ctx.arc(b * 6.6, groundY - b * 2.3, b * 0.38, 0, Math.PI * 2);
+  ctx.stroke();
+  // Spur und Würfel
+  ctx.fillStyle = theme.trail;
+  for (let i = 0; i < 4; i++) ctx.fillRect(b * 1.2 - i * b * 0.32, groundY - b * 1.75 + i * b * 0.18, b * 0.16, b * 0.16);
+  drawCube(ctx, b * 2, groundY - b * 1.9, b, 25, theme, t);
+}
+
+// Vorschau passend zum Spiel des Artikels
+export function drawPreview(canvas, id, t = 0) {
+  if (id.startsWith('cubejump-')) drawCubePreview(canvas, id, t);
+  else drawSnakePreview(canvas, id, t);
+}
+
 // Vorschau für den Shop: kleines Spielfeld mit einer S-förmigen Schlange
 export function drawSnakePreview(canvas, id, t = 0) {
   const ctx = canvas.getContext('2d');

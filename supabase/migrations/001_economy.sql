@@ -279,7 +279,7 @@ begin
   if v_uid is null then
     raise exception 'Nicht angemeldet';
   end if;
-  if p_game not in ('snake', '2048', 'connect4', 'pairs', 'minesweeper', 'bricks', 'blocks') then
+  if p_game not in ('snake', '2048', 'connect4', 'pairs', 'minesweeper', 'bricks', 'blocks', 'cubejump') then
     raise exception 'Unbekanntes Spiel: %', p_game;
   end if;
   if p_result not in ('win', 'loss', 'draw', 'score') then
@@ -576,7 +576,10 @@ insert into public.reward_rules (game, difficulty, result, coins, per_points, ma
   ('connect4',    'easy',   'draw',    2, null, null, 20, null),
   ('connect4',    'medium', 'draw',    7, null, null, 20, null),
   ('connect4',    'hard',   'draw',   20, null, null, 20, null),
-  ('connect4',    'ultra',  'draw',   50, null, null, 20, null)
+  ('connect4',    'ultra',  'draw',   50, null, null, 20, null),
+  ('cubejump',    'easy',   'win',    30, null, null, 28, null),
+  ('cubejump',    'medium', 'win',    60, null, null, 27, null),
+  ('cubejump',    'hard',   'win',   150, null, null, 26, null)
 on conflict (game, difficulty, result) do update set
   coins = excluded.coins,
   per_points = excluded.per_points,
@@ -597,7 +600,7 @@ on conflict (idx) do update set coins = excluded.coins, diamonds = excluded.diam
 
 insert into public.achievements (id, game, name, description, stat, threshold, reward_coins, reward_diamonds, sort) values
   ('first-game',     null,          'Erste Runde',               'Spiele deine erste Runde.',                               'plays_total',  1,    50,  0,  10),
-  ('all-games',      null,          'Allrounder',                'Spiele jedes der 7 Spiele mindestens einmal.',            'games_played', 7,   200,  0,  20),
+  ('all-games',      null,          'Allrounder',                'Spiele jedes der 8 Spiele mindestens einmal.',            'games_played', 8,   200,  0,  20),
   ('rounds-500',     null,          'Dauerbrenner',              'Spiele 500 Runden.',                                      'plays_total',  500,   0,  5,  30),
   ('streak-30',      null,          'Treue Seele',               'Drehe 30 Tage in Folge am Glücksrad.',                    'spin_streak',  30,    0, 10,  40),
   ('snake-25',       'snake',       'Hungrig',                   'Friss 25 Äpfel in einer Runde.',                          'best_score',   25,  100,  0, 100),
@@ -614,7 +617,10 @@ insert into public.achievements (id, game, name, description, stat, threshold, r
   ('mines-hard',     'minesweeper', 'Minenexperte',              'Gewinne auf Schwer.',                                     'wins_hard',    1,     0,  5, 610),
   ('c4-hard',        'connect4',    'Taktiker',                  'Besiege den Computer auf Schwer.',                        'wins_hard',    1,   200,  0, 700),
   ('c4-ultra',       'connect4',    'Unbesiegbar?',              'Besiege den Computer auf Ultra.',                         'wins_ultra',   1,     0, 10, 710),
-  ('c4-100',         'connect4',    'Seriensieger',              'Gewinne 100-mal gegen den Computer (jede Stärke).',       'wins',         100,   0, 10, 720)
+  ('c4-100',         'connect4',    'Seriensieger',              'Gewinne 100-mal gegen den Computer (jede Stärke).',       'wins',         100,   0, 10, 720),
+  ('jump-easy',      'cubejump',    'Erster Sprung',             'Schaffe in Würfelsprung das Level Leicht.',               'wins_easy',    1,   100,  0, 800),
+  ('jump-medium',    'cubejump',    'Im Takt',                   'Schaffe in Würfelsprung das Level Mittel.',               'wins_medium',  1,   200,  0, 810),
+  ('jump-hard',      'cubejump',    'Würfelmeister',             'Schaffe in Würfelsprung das Level Schwer.',               'wins_hard',    1,     0,  5, 820)
 on conflict (id) do update set
   game = excluded.game,
   name = excluded.name,
@@ -631,7 +637,13 @@ insert into public.shop_items (id, game, name, price_coins, price_diamonds, sort
   ('snake-zebra',   'snake', 'Zebra',      600,  0, 20),
   ('snake-neon',    'snake', 'Neon',       800,  0, 30),
   ('snake-rainbow', 'snake', 'Regenbogen',   0,  5, 40),
-  ('snake-gold',    'snake', 'Gold',         0, 10, 50)
+  ('snake-gold',    'snake', 'Gold',         0, 10, 50),
+  ('cubejump-classic', 'cubejump', 'Klassisch',         0,  0, 100),
+  ('cubejump-sunset',  'cubejump', 'Sonnenuntergang', 400,  0, 110),
+  ('cubejump-ice',     'cubejump', 'Eis',             600,  0, 120),
+  ('cubejump-neon',    'cubejump', 'Neon',            800,  0, 130),
+  ('cubejump-lava',    'cubejump', 'Lava',              0,  5, 140),
+  ('cubejump-gold',    'cubejump', 'Gold',              0, 10, 150)
 on conflict (id) do update set
   game = excluded.game,
   name = excluded.name,

@@ -27,6 +27,9 @@ const CATALOG = {
     ['connect4', 'medium', 'draw', 7, null, null, 20],
     ['connect4', 'hard', 'draw', 20, null, null, 20],
     ['connect4', 'ultra', 'draw', 50, null, null, 20],
+    ['cubejump', 'easy', 'win', 30, null, null, 28],
+    ['cubejump', 'medium', 'win', 60, null, null, 27],
+    ['cubejump', 'hard', 'win', 150, null, null, 26],
   ].map(([game, difficulty, result, coins, per_points, max_coins, min_seconds]) => ({ game, difficulty, result, coins, per_points, max_coins, min_seconds })),
   wheel_segments: [
     [0, 25, 0, 25], [1, 50, 0, 22], [2, 75, 0, 18], [3, 100, 0, 14],
@@ -34,7 +37,7 @@ const CATALOG = {
   ].map(([idx, coins, diamonds, weight]) => ({ idx, coins, diamonds, weight })),
   achievements: [
     ['first-game', null, 'Erste Runde', 'Spiele deine erste Runde.', 'plays_total', 1, 50, 0, 10],
-    ['all-games', null, 'Allrounder', 'Spiele jedes der 7 Spiele mindestens einmal.', 'games_played', 7, 200, 0, 20],
+    ['all-games', null, 'Allrounder', 'Spiele jedes der 8 Spiele mindestens einmal.', 'games_played', 8, 200, 0, 20],
     ['rounds-500', null, 'Dauerbrenner', 'Spiele 500 Runden.', 'plays_total', 500, 0, 5, 30],
     ['streak-30', null, 'Treue Seele', 'Drehe 30 Tage in Folge am Glücksrad.', 'spin_streak', 30, 0, 10, 40],
     ['snake-25', 'snake', 'Hungrig', 'Friss 25 Äpfel in einer Runde.', 'best_score', 25, 100, 0, 100],
@@ -52,6 +55,9 @@ const CATALOG = {
     ['c4-hard', 'connect4', 'Taktiker', 'Besiege den Computer auf Schwer.', 'wins_hard', 1, 200, 0, 700],
     ['c4-ultra', 'connect4', 'Unbesiegbar?', 'Besiege den Computer auf Ultra.', 'wins_ultra', 1, 0, 10, 710],
     ['c4-100', 'connect4', 'Seriensieger', 'Gewinne 100-mal gegen den Computer (jede Stärke).', 'wins', 100, 0, 10, 720],
+    ['jump-easy', 'cubejump', 'Erster Sprung', 'Schaffe in Würfelsprung das Level Leicht.', 'wins_easy', 1, 100, 0, 800],
+    ['jump-medium', 'cubejump', 'Im Takt', 'Schaffe in Würfelsprung das Level Mittel.', 'wins_medium', 1, 200, 0, 810],
+    ['jump-hard', 'cubejump', 'Würfelmeister', 'Schaffe in Würfelsprung das Level Schwer.', 'wins_hard', 1, 0, 5, 820],
   ].map(([id, game, name, description, stat, threshold, reward_coins, reward_diamonds, sort]) => ({
     id, game, name, description, stat, threshold, reward_coins, reward_diamonds, sort,
   })),
@@ -62,6 +68,12 @@ const CATALOG = {
     ['snake-neon', 'snake', 'Neon', 800, 0, 30],
     ['snake-rainbow', 'snake', 'Regenbogen', 0, 5, 40],
     ['snake-gold', 'snake', 'Gold', 0, 10, 50],
+    ['cubejump-classic', 'cubejump', 'Klassisch', 0, 0, 100],
+    ['cubejump-sunset', 'cubejump', 'Sonnenuntergang', 400, 0, 110],
+    ['cubejump-ice', 'cubejump', 'Eis', 600, 0, 120],
+    ['cubejump-neon', 'cubejump', 'Neon', 800, 0, 130],
+    ['cubejump-lava', 'cubejump', 'Lava', 0, 5, 140],
+    ['cubejump-gold', 'cubejump', 'Gold', 0, 10, 150],
   ].map(([id, game, name, price_coins, price_diamonds, sort]) => ({ id, game, name, price_coins, price_diamonds, sort })),
 };
 

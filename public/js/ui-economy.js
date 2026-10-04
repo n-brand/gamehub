@@ -2,7 +2,7 @@
 // Kopfzeile (Kontostand, Glücksrad, Login), Einblendungen, Glücksrad-Fenster und die Seiten #/shop und #/erfolge.
 import * as eco from './economy.js';
 import { GAMES } from './games.js';
-import { drawSnakePreview } from './designs.js';
+import { drawPreview } from './designs.js';
 
 // ---------- Symbole ----------
 
@@ -410,7 +410,7 @@ export function openWheel() {
 
 // ---------- Seite: Shop ----------
 
-const ANIMATED = new Set(['snake-rainbow', 'snake-gold', 'snake-neon']);
+const ANIMATED = new Set(['snake-rainbow', 'snake-gold', 'snake-neon', 'cubejump-gold']);
 
 function priceHtml(item) {
   if (eco.isFree(item)) return '<span class="price">Gratis</span>';
@@ -491,7 +491,7 @@ export function renderShop(container) {
             .join('')}
         </div>
       </section>`;
-    container.querySelectorAll('canvas[data-design]').forEach((c) => drawSnakePreview(c, c.dataset.design, performance.now()));
+    container.querySelectorAll('canvas[data-design]').forEach((c) => drawPreview(c, c.dataset.design, performance.now()));
   };
 
   const onClick = (e) => {
@@ -513,7 +513,7 @@ export function renderShop(container) {
   const animate = (t) => {
     raf = requestAnimationFrame(animate);
     container.querySelectorAll('canvas[data-design]').forEach((c) => {
-      if (ANIMATED.has(c.dataset.design)) drawSnakePreview(c, c.dataset.design, t);
+      if (ANIMATED.has(c.dataset.design)) drawPreview(c, c.dataset.design, t);
     });
   };
 
