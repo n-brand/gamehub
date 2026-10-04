@@ -142,6 +142,7 @@ async function renderGame(id) {
 
   app.innerHTML = `
     <div class="game-page">
+      <div class="game-stage">
       <div class="game-head">
         <a href="#/" class="back">← Alle Spiele</a>
         <h1>${escapeHtml(game.title)}</h1>
@@ -151,6 +152,7 @@ async function renderGame(id) {
         </div>
       </div>
       <div class="game-frame" id="frame" style="${themeVars(game)}"></div>
+      </div>
       <div class="game-info">
         <p>${escapeHtml(game.description)}</p>
         <p><strong>Steuerung:</strong> ${escapeHtml(game.controls)}</p>

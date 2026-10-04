@@ -13,7 +13,7 @@
 
 ## Design-Grundsatz
 
-- **Desktop first:** Layout und Spiele werden primär für große Desktop-Bildschirme gebaut; Spielfelder sollen den verfügbaren Platz groß ausnutzen. Mobil muss funktionieren, ist aber zweitrangig. Die Übersicht nutzt die Breite dynamisch (bis 2400px): Kachel-Raster mit `auto-fill` (min. 210px), Feature-Karten max. 380px breit und zentriert; Elemente eher kompakt halten (große Bildschirme).
+- **Desktop first:** Layout und Spiele werden primär für große Desktop-Bildschirme gebaut; Spielfelder sollen den verfügbaren Platz groß ausnutzen. Mobil muss funktionieren, ist aber zweitrangig. Die Übersicht nutzt die Breite dynamisch (bis 2400px): Kachel-Raster mit `auto-fill` (min. 210px), Feature-Karten max. 380px breit und zentriert; Elemente eher kompakt halten (große Bildschirme). Spieleseite: `.game-stage` ist genau so hoch wie das Fenster unter der Kopfzeile; der Spielrahmen ist ein Size-Container, Spiele berechnen ihre Größe mit `cqi`/`cqh`, damit sie immer komplett sichtbar sind (nie bis zum unteren Rand).
 - **Dark ist Standard**, Light per Umschalter oben rechts (gespeichert in `localStorage` unter `gamehub-theme`). Farben nur über CSS-Tokens in `:root` / `:root[data-theme="light"]`; neue UI immer in beiden Themes prüfen.
 - **Illustrationsstil:** Flat Design (flache Vektorgrafik), farbige Flächen, abgerundete Formen, dezente Schatten/Glanzpunkte, kein Outline, keine Verläufe.
 - **Karten:** Illustration oben in der Spielfarbe (`theme.bg`), Textbereich darunter eine Stufe dunkler (Mischung aus `bg` und `edge`).
