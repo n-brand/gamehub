@@ -115,14 +115,21 @@ main {
   z-index: 2;
   padding: 4px 16px;
   border-radius: 999px;
-  background: var(--yellow);
+  --accent: var(--yellow);
+  background: var(--accent);
   color: var(--on-accent);
   font-size: 0.85rem;
   font-weight: 900;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
-.badge--soon { background: var(--blue); }
+.badge--soon { --accent: var(--blue); }
+/* Kartenfarbe ≈ Badge-Farbe: dunkle Pille mit farbiger Schrift, damit der Badge sichtbar bleibt */
+.badge--alt {
+  background: var(--on-accent);
+  color: var(--accent);
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
 .tile .badge { top: 10px; left: auto; right: 10px; transform: none; font-size: 0.72rem; padding: 3px 12px; }
 
 /* ---------- Hero & Feature-Karten ---------- */

@@ -22,9 +22,25 @@ function themeVars(game) {
   return `--bg:${game.theme.bg};--edge:${game.theme.edge};--ink:${game.theme.ink}`;
 }
 
+function hexToRgb(hex) {
+  const n = parseInt(hex.replace('#', ''), 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+
+// Farben fast gleich? (Abstand im RGB-Raum)
+function similarColors(a, b) {
+  const [r1, g1, b1] = hexToRgb(a);
+  const [r2, g2, b2] = hexToRgb(b);
+  return Math.hypot(r1 - r2, g1 - g2, b1 - b2) < 70;
+}
+
 function badgeFor(game) {
-  const text = game.available ? game.badge : 'Bald';
-  return text ? `<span class="badge ${game.available ? '' : 'badge--soon'}">${escapeHtml(text)}</span>` : '';
+  const soon = !game.available;
+  const text = soon ? 'Bald' : game.badge;
+  if (!text) return '';
+  const accent = getComputedStyle(document.documentElement).getPropertyValue(soon ? '--blue' : '--yellow').trim();
+  const classes = ['badge', soon && 'badge--soon', similarColors(game.theme.bg, accent) && 'badge--alt'].filter(Boolean);
+  return `<span class="${classes.join(' ')}">${escapeHtml(text)}</span>`;
 }
 
 const STAR_ON = '<svg viewBox="0 0 24 24"><path d="M12 2.8l2.8 5.8 6.3.9-4.6 4.4 1.1 6.3L12 17.2l-5.6 3 1.1-6.3L2.9 9.5l6.3-.9z" fill="currentColor"/></svg>';

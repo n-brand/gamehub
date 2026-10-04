@@ -17,6 +17,7 @@
 - **Dark ist Standard**, Light per Umschalter oben rechts (gespeichert in `localStorage` unter `gamehub-theme`). Farben nur über CSS-Tokens in `:root` / `:root[data-theme="light"]`; neue UI immer in beiden Themes prüfen.
 - **Illustrationsstil:** Flat Design (flache Vektorgrafik), farbige Flächen, abgerundete Formen, dezente Schatten/Glanzpunkte, kein Outline, keine Verläufe.
 - **Karten:** Illustration oben in der Spielfarbe (`theme.bg`), Textbereich darunter eine Stufe dunkler (Mischung aus `bg` und `edge`).
+- **Badges (NEU/BALD):** gelb bzw. hellblau; ist die Kartenfarbe der Badge-Farbe zu ähnlich, wird automatisch `badge--alt` gesetzt (Navy-Pille mit farbiger Schrift und Rand, Logik in `badgeFor` in `app.js`).
 - **Stil wie fontawesome.com:** heller grauer Hintergrund, Navy-Text, runde Schrift (Nunito), Karten mit dickem farbigem Rand unten, Pill-Badges (NEU/BALD), Links mit Pfeil.
 - **Jede Spiele-Kachel hat eine eigene Illustration**, die zum Spiel passt (in `public/js/art.js`) und eine eigene Farbwelt (`theme` in `games.js`). Neue Spiele bekommen immer beides.
 - **Spiele sollen hochwertig aussehen**, nicht nach simplen Blöcken (Vorbild Snake: Google Snake mit flüssiger Bewegung, Augen, Apfel).
