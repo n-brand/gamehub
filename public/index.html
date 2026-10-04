@@ -19,10 +19,16 @@
 <body>
   <header class="topbar">
     <a href="#/" class="logo">Game<span>Hub</span></a>
+    <nav class="topnav" id="topnav" hidden>
+      <a href="#/shop" data-nav>Shop</a>
+      <a href="#/erfolge" data-nav>Erfolge</a>
+    </nav>
     <input id="search" class="search" type="search" placeholder="Spiele suchen …" autocomplete="off">
+    <div class="account" id="account" hidden></div>
     <button id="theme-toggle" class="theme-toggle" type="button"></button>
   </header>
   <main id="app"></main>
+  <div class="toasts" id="toasts" aria-live="polite"></div>
   <script type="module" src="js/app.js"></script>
 </body>
 </html>

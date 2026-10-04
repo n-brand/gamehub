@@ -159,6 +159,8 @@ export function mount(container, api) {
   let dasTimer = 0;
   let arrTimer = 0;
   let effects = []; // Texte und Fall-Spuren
+  let quads = 0; // Vierer-Reihen in dieser Runde (für Erfolge)
+  let startedAt = 0;
 
   // ---------- Spielregeln ----------
 
@@ -284,6 +286,7 @@ export function mount(container, api) {
 
   function finishClear() {
     const n = clearing.rows.length;
+    if (n === 4) quads++;
     board = board.filter((_, r) => !clearing.rows.includes(r));
     while (board.length < ROWS) board.unshift(Array(COLS).fill(null));
     clearing = null;
@@ -302,7 +305,16 @@ export function mount(container, api) {
 
   // ---------- Spielablauf ----------
 
+  // Runde ans Portal melden (Coins, Erfolge)
+  function report() {
+    api.reportResult?.({ result: 'score', score, durationMs: Date.now() - startedAt, extra: { level, quads } });
+  }
+
   function newGame() {
+    // Abgebrochene Runde mit Punkten trotzdem werten
+    if ((state === 'playing' || state === 'paused') && score > 0) report();
+    startedAt = Date.now();
+    quads = 0;
     board = Array.from({ length: ROWS }, () => Array(COLS).fill(null));
     queue = [];
     held = null;
@@ -324,6 +336,7 @@ export function mount(container, api) {
   function gameOver() {
     state = 'over';
     piece = null;
+    report();
     api.submitScore(score);
     const record = score > bestAtStart && score > 0;
     renderStats();
@@ -672,6 +685,7 @@ export function mount(container, api) {
   raf = requestAnimationFrame(frame);
 
   return () => {
+    if ((state === 'playing' || state === 'paused') && score > 0) report();
     cancelAnimationFrame(raf);
     resize.disconnect();
     window.removeEventListener('keydown', onKeyDown);

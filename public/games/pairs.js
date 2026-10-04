@@ -1,4 +1,4 @@
-// Paare finden – Karten aufdecken und gleiche Paare finden. mount(container) gibt eine Cleanup-Funktion zurück.
+// Paare finden – Karten aufdecken und gleiche Paare finden. mount(container, api) gibt eine Cleanup-Funktion zurück.
 
 const LEVELS = {
   easy: { cols: 4, rows: 3 },
@@ -78,7 +78,7 @@ const fmtTime = (ms) => {
 // Weniger Züge sind besser, bei Gleichstand zählt die Zeit
 const isBetter = (a, b) => !b || a.moves < b.moves || (a.moves === b.moves && a.time < b.time);
 
-export function mount(container) {
+export function mount(container, api = {}) {
   const data = load();
   data.best = data.best || {};
   let level = LEVELS[data.level] ? data.level : 'medium';
@@ -258,6 +258,7 @@ export function mount(container) {
     endTime = performance.now();
     clearInterval(ticker);
     const result = { moves, time: Math.round(elapsed()) };
+    api.reportResult?.({ result: 'win', difficulty: level, durationMs: result.time, extra: { moves } });
     const record = isBetter(result, data.best[level]);
     if (record) {
       data.best[level] = result;

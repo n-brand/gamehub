@@ -26,7 +26,7 @@
 
 **Regel:** Nach jeder Änderung am Projekt diesen Abschnitt aktualisieren, damit er immer den aktuellen Stand widerspiegelt (was existiert, was in Arbeit ist, nächste Schritte).
 
-**Aktueller Stand (2026-10-03):**
+**Aktueller Stand (2026-10-04):**
 - Grundgerüst der Plattform steht: reines HTML/CSS/JS ohne Build-Schritt und ohne npm-Abhängigkeiten.
 - Lokal starten: `npm run dev` (bzw. `node server.js`) → http://localhost:4177
 - Online: https://n-brand.github.io/gamehub/ – GitHub Actions (`.github/workflows/pages.yml`) veröffentlicht `public/` bei jedem Push auf `main`. Pfade in `public/` müssen relativ sein (Seite läuft unter `/gamehub/`).
@@ -34,8 +34,9 @@
 - Übersicht: Hero, 3 große Feature-Karten, Kategorie-Filter, Suche, „Zuletzt gespielt“, Favoriten, alle Spiele als illustrierte Kacheln. Favoriten lassen sich direkt auf Kacheln/Feature-Karten per Stern (oben links, erscheint beim Hovern; markierte immer sichtbar) setzen und entfernen. Alle 7 Spiele sind spielbar; neue geplante Spiele können wieder als „Bald“-Kacheln (`available: false`) eingetragen werden.
 - Spieleseite: Spiel in farbigem Rahmen (Spielfarbe), Vollbild, Favorit, Beschreibung/Steuerung, ähnliche Spiele.
 - Fertige Spiele: **Blockfall** (Tetris-Prinzip; SRS-Drehung mit Wall Kicks, 7er-Beutel, Geisterstein, Halten, 3er-Vorschau, DAS/ARR, Einrast-Verzögerung, Level alle 10 Reihen, Touch-Tasten, Rekord über `api.submitScore`), **Mauerbrecher** (Breakout-Prinzip; Canvas 960×720 skaliert, 5 Level-Layouts mit harten Steinen, Kapseln: breit/mehr Bälle/Leben, Partikel, Rekord über `api.submitScore`), **Minesweeper** (9×9/16×16/30×16, erster Klick sicher, Rechtsklick/langes Drücken/Flaggen-Modus, Zahl-Klick, Aufdecken als Welle, Bestzeit pro Stufe in `localStorage` unter `gamehub-minesweeper`), **Paare finden** (Memory-Prinzip, Name wegen Ravensburger-Marke „memory“; 12/20/30 Karten, 3D-Umdrehen, Rekord = wenigste Züge pro Größe in `localStorage` unter `gamehub-pairs`), **Vier gewinnt** (gegen Computer in 4 Stärken – Leicht/Mittel/Schwer: Negamax mit Alpha-Beta, 600 ms; Ultra: Merktabelle (Zobrist), Drohungs-Logik, Paritäts-Bewertung, bis 2 s, schlägt Schwer ohne Niederlage – oder zu zweit; Berechnung im Web Worker (dieselbe Datei als Modul-Worker); Steine fallen hinter das SVG-Brett mit Löchern, Gewinnreihe leuchtet, Startspieler wechselt, Einstellungen in `localStorage` unter `gamehub-connect4`), **2048** (klassische Regeln, gleitende Kacheln mit Verschmelz-Animation, Punkte/Rekord, Sieg bei 2048 mit Weiterspielen, Spielstand wird in `localStorage` unter `gamehub-2048-state` gespeichert), **Snake** im Google-Snake-Stil (17×15 Feld, flüssige Bewegung, Augen, Apfel, Tastatur/Wischen/Touch-Buttons, Pause, lokaler Highscore).
-- Daten (zuletzt gespielt, Favoriten, Highscores) nur lokal im Browser (`localStorage`), noch kein Backend.
-- Nächste Schritte: weitere Spiele (selbst bauen oder Open-Source übernehmen, siehe unten), später Backend mit **Supabase** für Accounts/Bestenlisten.
+- Zuletzt gespielt, Favoriten und lokale Rekorde bleiben im Browser (`localStorage`).
+- **Coins, Diamanten, Glücksrad, Erfolge und Shop** (erste Version gebaut, Spec: `docs/superpowers/specs/2026-10-04-coins-shop-design.md`): Supabase-Backend mit Google-Login; alle 7 Spiele melden Runden über `api.reportResult`, Snake nutzt Shop-Designs über `api.getDesign`. **Noch nicht live:** Der Nutzer muss das Supabase-Projekt anlegen und Google-Login einrichten (Anleitung `docs/supabase-setup.md`), dann `public/js/config.js` füllen. Ohne Konfiguration ist alles ausgeblendet; zum Ausprobieren `?demo=1` an die Adresse hängen (Demo-Backend im Browser). Der Nutzer will die Werte (Coins, Preise, Chancen) nach dem Test selbst anpassen.
+- Nächste Schritte: Supabase einrichten und mit echtem Login testen, Werte anpassen, Datenschutzerklärung, Designs für weitere Spiele.
 
 **Aufbau:**
 - `server.js` – minimaler Dev-Server, liefert `public/` aus
@@ -47,6 +48,13 @@
 - `public/js/art.js` – SVG-Illustration pro Spiel für Kacheln/Feature-Karten
 - Gemeinsame Spiel-Bausteine in `style.css` (`.gp`, `.gp-panel`, `.gp-stats`, `.gp-seg`, `.gp-overlay` …): Bedienfeld neben dem Spielfeld, wird bei schmalem Rahmen per Container-Query darübergesetzt. Neue Spiele nutzen diese Bausteine.
 - `public/thumbs/` – Favicon
+- `public/js/config.js` – Supabase-URL und öffentlicher Anon-Key (leer = Wirtschaft ausgeblendet)
+- `public/js/economy.js` – einziges Modul mit Backend-Zugriff (Login, Kontostand, reportResult, Glücksrad, Kaufen, Ausrüsten); Ereignisse für die Oberfläche
+- `public/js/ui-economy.js` – Kopfzeile (Kontostand, Glücksrad, Login), Einblendungen, Glücksrad-Fenster, Seiten `#/shop` und `#/erfolge`
+- `public/js/designs.js` – Aussehen der Shop-Designs (Spiel und Shop-Vorschau)
+- `public/js/demo-backend.js` – Demo-Backend für `?demo=1` (Kataloge bei Änderungen am SQL mitziehen)
+- `supabase/migrations/001_economy.sql` – Tabellen, RLS, Server-Funktionen (`report_result`, `claim_daily_spin`, `buy_item`, `equip_item`), Kataloge; im Supabase-SQL-Editor ausführen
+- Spiel-API (`mount(container, api)`): `getHighscore`, `submitScore` (lokal), `reportResult({ result, difficulty, score, durationMs, extra })`, `getDesign()`
 
 ## Open-Source-Spiele (Recherche 2026-10)
 
@@ -111,6 +119,6 @@ Multiplayer (später):
 - Kleines Echtzeit-Spiel (z. B. agar.io-ähnlich)
 
 ### Technik
-- **Backend: Supabase (entschieden, kommt später)** – für Accounts/Login, geräteübergreifende Favoriten und „Zuletzt gespielt“, Highscores/Bestenlisten und Echtzeit für rundenbasierte Multiplayer-Spiele. Bis dahin bleibt alles in `localStorage` (`public/js/storage.js`); diese Datei ist die Stelle, an der Supabase später angebunden wird.
-- Frontend-Hosting: voraussichtlich Cloudflare Pages (noch nicht entschieden)
+- **Backend: Supabase** mit Google-Login – umgesetzt für Coins, Glücksrad, Erfolge und Shop (alle Wertänderungen nur über Server-Funktionen, Clients lesen nur). Später auch für geräteübergreifende Favoriten/„Zuletzt gespielt“, Bestenlisten und Echtzeit-Multiplayer.
+- Frontend-Hosting: GitHub Pages (per GitHub Actions)
 - Beides läuft im Free Tier (Achtung: Supabase pausiert Free-Projekte nach ca. 1 Woche Inaktivität)

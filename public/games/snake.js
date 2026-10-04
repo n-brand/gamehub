@@ -1,4 +1,7 @@
 // Snake im Stil von Google Snake – mount(container, api) gibt eine Cleanup-Funktion zurück.
+// Aussehen (Farben, Muster) kommt aus dem ausgerüsteten Shop-Design (api.getDesign, siehe js/designs.js).
+
+import { snakeDesign, drawSnakeBody, drawApple as paintApple } from '../js/designs.js';
 
 const COLS = 17;
 const ROWS = 15;
@@ -6,13 +9,7 @@ const CELL = 48; // interne Auflösung pro Feld
 const START_STEP = 135; // ms pro Feld
 const MIN_STEP = 70;
 
-const COLORS = {
-  light: '#aad751',
-  dark: '#a2d149',
-  snake: '#4875ea',
-  snakeShade: '#3a62cc',
-  apple: '#e7471d',
-};
+const APPLE_COLOR = '#e7471d';
 
 const DIRS = {
   up: { x: 0, y: -1 },
@@ -28,7 +25,7 @@ const KEYS = {
   ArrowRight: 'right', KeyD: 'right',
 };
 
-const APPLE_ICON = `<svg viewBox="0 0 24 24" width="26" height="26"><circle cx="12" cy="14" r="8" fill="${COLORS.apple}"/><path d="M12 6 q1 -3 3 -4" stroke="#5d3a1a" stroke-width="2" fill="none" stroke-linecap="round"/><ellipse cx="16" cy="5" rx="3.5" ry="2" fill="#4caf50" transform="rotate(-25 16 5)"/></svg>`;
+const APPLE_ICON = `<svg viewBox="0 0 24 24" width="26" height="26"><circle cx="12" cy="14" r="8" fill="${APPLE_COLOR}"/><path d="M12 6 q1 -3 3 -4" stroke="#5d3a1a" stroke-width="2" fill="none" stroke-linecap="round"/><ellipse cx="16" cy="5" rx="3.5" ry="2" fill="#4caf50" transform="rotate(-25 16 5)"/></svg>`;
 const TROPHY_ICON = `<svg viewBox="0 0 24 24" width="26" height="26"><path d="M7 3h10v5a5 5 0 0 1-10 0z" fill="#ffd43b"/><path d="M7 5H4v2a3 3 0 0 0 3 3M17 5h3v2a3 3 0 0 1-3 3" stroke="#ffd43b" stroke-width="2" fill="none"/><rect x="10.5" y="12" width="3" height="5" fill="#f59f00"/><rect x="7" y="17" width="10" height="4" rx="1" fill="#f59f00"/></svg>`;
 
 export function mount(container, api) {
@@ -62,10 +59,14 @@ export function mount(container, api) {
   const overlay = container.querySelector('[data-overlay]');
   const msg = container.querySelector('[data-msg]');
   const startBtn = container.querySelector('[data-start]');
+  const hud = container.querySelector('.snake-hud');
 
   // state: 'idle' | 'running' | 'paused' | 'over'
   let state = 'idle';
   let snake, prevTail, dir, queue, food, score, step, progress, lastTime, raf;
+  let startedAt = 0;
+  let designId = null;
+  let design = snakeDesign();
 
   function reset() {
     const y = Math.floor(ROWS / 2);
@@ -92,6 +93,7 @@ export function mount(container, api) {
 
   function start() {
     reset();
+    startedAt = Date.now();
     state = 'running';
     overlay.hidden = true;
     lastTime = performance.now();
@@ -132,9 +134,15 @@ export function mount(container, api) {
     return true;
   }
 
+  // Runde ans Portal melden (Coins, Erfolge)
+  function report() {
+    api.reportResult?.({ result: 'score', score, durationMs: Date.now() - startedAt });
+  }
+
   function gameOver(won = false) {
     state = 'over';
     progress = 1;
+    report();
     const record = api.submitScore(score);
     if (record) bestEl.textContent = String(score);
     msg.textContent = won ? `Gewonnen! ${score} Äpfel` : `${score} ${score === 1 ? 'Apfel' : 'Äpfel'}${record ? ' · Neuer Rekord!' : ''}`;
@@ -163,7 +171,7 @@ export function mount(container, api) {
   function drawBoard() {
     for (let x = 0; x < COLS; x++) {
       for (let y = 0; y < ROWS; y++) {
-        ctx.fillStyle = (x + y) % 2 ? COLORS.dark : COLORS.light;
+        ctx.fillStyle = (x + y) % 2 ? design.board[1] : design.board[0];
         ctx.fillRect(x * CELL, y * CELL, CELL, CELL);
       }
     }
@@ -173,37 +181,7 @@ export function mount(container, api) {
     if (!food) return;
     const { x, y } = center(food);
     const pulse = 1 + Math.sin(time / 180) * 0.04;
-    const r = CELL * 0.36 * pulse;
-    ctx.save();
-    ctx.translate(x, y + 2);
-    // Schatten
-    ctx.fillStyle = 'rgba(0,0,0,.12)';
-    ctx.beginPath();
-    ctx.ellipse(0, r * 0.95, r * 0.8, r * 0.25, 0, 0, Math.PI * 2);
-    ctx.fill();
-    // Apfel
-    ctx.fillStyle = COLORS.apple;
-    ctx.beginPath();
-    ctx.arc(-r * 0.35, 0, r * 0.8, 0, Math.PI * 2);
-    ctx.arc(r * 0.35, 0, r * 0.8, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = 'rgba(255,255,255,.45)';
-    ctx.beginPath();
-    ctx.ellipse(-r * 0.5, -r * 0.3, r * 0.18, r * 0.28, -0.5, 0, Math.PI * 2);
-    ctx.fill();
-    // Stiel und Blatt
-    ctx.strokeStyle = '#5d3a1a';
-    ctx.lineWidth = 3;
-    ctx.lineCap = 'round';
-    ctx.beginPath();
-    ctx.moveTo(0, -r * 0.6);
-    ctx.quadraticCurveTo(r * 0.05, -r * 1.05, r * 0.3, -r * 1.2);
-    ctx.stroke();
-    ctx.fillStyle = '#4caf50';
-    ctx.beginPath();
-    ctx.ellipse(r * 0.55, -r * 1.1, r * 0.38, r * 0.18, -0.4, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
+    paintApple(ctx, x, y + 2, CELL * 0.36 * pulse, design.apple);
   }
 
   function snakePoints() {
@@ -215,26 +193,9 @@ export function mount(container, api) {
     return pts;
   }
 
-  function strokePath(pts, width, color) {
-    ctx.strokeStyle = color;
-    ctx.lineWidth = width;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    ctx.beginPath();
-    ctx.moveTo(pts[0].x, pts[0].y);
-    for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
-    ctx.stroke();
-  }
-
-  function drawSnake() {
+  function drawSnake(now) {
     const pts = snakePoints();
-    // Schatten, Körper, Glanzlinie
-    ctx.save();
-    ctx.translate(0, 4);
-    strokePath(pts, CELL * 0.78, 'rgba(0,0,0,.12)');
-    ctx.restore();
-    strokePath(pts, CELL * 0.78, COLORS.snakeShade);
-    strokePath(pts, CELL * 0.66, COLORS.snake);
+    drawSnakeBody(ctx, pts, CELL, design, now);
     drawEyes(pts[0]);
   }
 
@@ -279,9 +240,16 @@ export function mount(container, api) {
         progress -= 1;
       }
     }
+    // Ausgerüstetes Design übernehmen (kann sich nach dem Login noch ändern)
+    const id = api.getDesign?.() || null;
+    if (id !== designId) {
+      designId = id;
+      design = snakeDesign(id);
+      hud.style.background = design.hud;
+    }
     drawBoard();
     drawApple(now);
-    drawSnake();
+    drawSnake(now);
   }
 
   // ---------- Eingabe ----------
@@ -335,6 +303,8 @@ export function mount(container, api) {
   raf = requestAnimationFrame(frame);
 
   return () => {
+    // Laufende Runde beim Verlassen trotzdem werten
+    if ((state === 'running' || state === 'paused') && score > 0) report();
     cancelAnimationFrame(raf);
     window.removeEventListener('keydown', onKey);
     document.removeEventListener('visibilitychange', onVisibility);

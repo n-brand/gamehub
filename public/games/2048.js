@@ -69,6 +69,7 @@ export function mount(container, api) {
   let won; // 2048 schon erreicht (danach weiterspielen ohne erneute Meldung)
   let over;
   let bestAtStart = 0; // Rekord zu Spielbeginn, für „Neuer Rekord!“
+  let startedAt = Date.now(); // Beginn der Runde (für die Wertung im Portal)
   let nextId = 1;
   let pending = null; // laufende Animation: { timer, finish }
   const els = new Map(); // tile id -> Element
@@ -143,8 +144,18 @@ export function mount(container, api) {
     return false;
   }
 
+  // Runde ans Portal melden (Coins, Erfolge)
+  function report() {
+    let maxTile = 0;
+    forEachCell((r, c, t) => t && (maxTile = Math.max(maxTile, t.value)));
+    api.reportResult?.({ result: 'score', score, durationMs: Date.now() - startedAt, extra: { maxTile } });
+  }
+
   function newGame() {
     finishPending();
+    // Abgebrochene Runde mit Punkten trotzdem werten
+    if (grid && !over && score > 0) report();
+    startedAt = Date.now();
     grid = Array.from({ length: SIZE }, () => Array(SIZE).fill(null));
     score = 0;
     bestAtStart = api.getHighscore();
@@ -158,13 +169,14 @@ export function mount(container, api) {
   }
 
   function persist() {
-    save(over ? null : { grid: grid.map((row) => row.map((t) => (t ? t.value : 0))), score, won, bestAtStart });
+    save(over ? null : { grid: grid.map((row) => row.map((t) => (t ? t.value : 0))), score, won, bestAtStart, startedAt });
   }
 
   function restore(data) {
     grid = data.grid.map((row) => row.map((v) => (v ? { id: nextId++, value: v } : null)));
     score = data.score;
     bestAtStart = data.bestAtStart ?? api.getHighscore();
+    startedAt = data.startedAt ?? Date.now();
     won = data.won;
     over = false;
     renderAll();
@@ -266,6 +278,7 @@ export function mount(container, api) {
     }
     if (!canMove()) {
       over = true;
+      report();
       persist();
       const record = score > bestAtStart;
       showOverlay(`Keine Züge mehr${record && score > 0 ? ' · Neuer Rekord!' : ''}`, [['Nochmal', newGame, true]]);

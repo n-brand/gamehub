@@ -1,5 +1,5 @@
 // Vier gewinnt – gegen den Computer (vier Stärken) oder zu zweit an einem Gerät.
-// mount(container) gibt eine Cleanup-Funktion zurück. Als Web Worker geladen, berechnet die
+// mount(container, api) gibt eine Cleanup-Funktion zurück. Als Web Worker geladen, berechnet die
 // Datei nur Computerzüge (siehe ganz unten).
 
 const COLS = 7;
@@ -483,7 +483,7 @@ function saveSettings(settings) {
   }
 }
 
-export function mount(container) {
+export function mount(container, api = {}) {
   const settings = loadSettings();
 
   const playerCard = (p) => `
@@ -555,6 +555,7 @@ export function mount(container) {
   let scores = { [RED]: 0, [YELLOW]: 0 };
   let round = 0;
   let clearing = false;
+  let roundStartedAt = Date.now();
   const timers = new Set();
 
   // setTimeout, das beim Rundenwechsel automatisch verfällt
@@ -672,6 +673,11 @@ export function mount(container) {
 
   function finish(win, line) {
     over = true;
+    // Nur Partien gegen den Computer zählen fürs Portal (zu zweit könnte man gegen sich selbst sammeln)
+    if (settings.mode === 'cpu') {
+      const result = win === RED ? 'win' : win === YELLOW ? 'loss' : 'draw';
+      api.reportResult?.({ result, difficulty: settings.level, durationMs: Date.now() - roundStartedAt });
+    }
     busy = false;
     winner = win;
     if (win) {
@@ -747,6 +753,7 @@ export function mount(container) {
   }
 
   function startRound() {
+    roundStartedAt = Date.now();
     starter = 3 - starter;
     current = starter;
     busy = false;

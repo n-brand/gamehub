@@ -109,6 +109,7 @@ export function mount(container, api) {
   let bestAtStart = 0;
   const keys = { left: false, right: false };
   let overlayAction = null;
+  let startedAt = 0;
 
   // ---------- Spielaufbau ----------
 
@@ -143,7 +144,15 @@ export function mount(container, api) {
     state = 'ready';
   }
 
+  // Runde ans Portal melden (Coins, Erfolge)
+  function report() {
+    api.reportResult?.({ result: 'score', score, durationMs: Date.now() - startedAt, extra: { level } });
+  }
+
   function newGame() {
+    // Abgebrochene Runde mit Punkten trotzdem werten
+    if (state !== 'over' && score > 0) report();
+    startedAt = Date.now();
     score = 0;
     lives = LIVES;
     level = 1;
@@ -384,6 +393,7 @@ export function mount(container, api) {
   function gameOver() {
     state = 'over';
     capsules = [];
+    report();
     api.submitScore(score);
     const record = score > bestAtStart && score > 0;
     renderStats();
@@ -653,6 +663,7 @@ export function mount(container, api) {
   raf = requestAnimationFrame(frame);
 
   return () => {
+    if (state !== 'over' && score > 0) report();
     cancelAnimationFrame(raf);
     resize.disconnect();
     window.removeEventListener('keydown', onKeyDown);

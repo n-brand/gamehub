@@ -1,4 +1,4 @@
-// Minesweeper – alle Felder ohne Mine aufdecken. mount(container) gibt eine Cleanup-Funktion zurück.
+// Minesweeper – alle Felder ohne Mine aufdecken. mount(container, api) gibt eine Cleanup-Funktion zurück.
 
 const LEVELS = {
   easy: { cols: 9, rows: 9, mines: 10 },
@@ -32,7 +32,7 @@ const fmtTime = (ms) => {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 };
 
-export function mount(container) {
+export function mount(container, api = {}) {
   const data = load();
   data.best = data.best || {};
   let level = LEVELS[data.level] ? data.level : 'easy';
@@ -277,6 +277,7 @@ export function mount(container) {
   function win() {
     over = true;
     stopClock();
+    api.reportResult?.({ result: 'win', difficulty: level, durationMs: elapsed() });
     const time = Math.round(elapsed());
     const record = !data.best[level] || time < data.best[level];
     if (record) {
@@ -305,6 +306,7 @@ export function mount(container) {
   function lose(hit) {
     over = true;
     stopClock();
+    api.reportResult?.({ result: 'loss', difficulty: level, durationMs: elapsed() });
     field.classList.add('is-lost');
     const hc = hit % cols;
     const hr = Math.floor(hit / cols);

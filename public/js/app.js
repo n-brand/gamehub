@@ -1,11 +1,13 @@
 import { CATEGORIES, GAMES, getGame } from './games.js';
 import * as store from './storage.js';
 import { art } from './art.js';
+import * as economy from './economy.js';
+import { initEconomyUI, renderShop, renderAchievements } from './ui-economy.js';
 
 const app = document.getElementById('app');
 const search = document.getElementById('search');
 
-let cleanupGame = null;
+let cleanupGame = null; // Aufräumen der aktuellen Seite (Spiel, Shop, Erfolge)
 let activeCategory = null;
 
 function el(html) {
@@ -195,6 +197,10 @@ async function renderGame(id) {
   cleanupGame = mod.mount(frame, {
     getHighscore: () => store.getHighscore(id),
     submitScore: (score) => store.submitScore(id, score),
+    // Runde ans Portal melden (Coins, Erfolge) – result: 'win' | 'loss' | 'draw' | 'score'
+    reportResult: (result) => economy.reportResult(id, result),
+    // Ausgerüstetes Shop-Design dieses Spiels
+    getDesign: () => economy.getEquipped(id),
   });
 }
 
@@ -208,9 +214,14 @@ function route() {
   const match = location.hash.match(/^#\/game\/([\w-]+)/);
   if (match) {
     renderGame(match[1]);
+  } else if (location.hash === '#/shop' && economy.enabled) {
+    cleanupGame = renderShop(app);
+  } else if (location.hash === '#/erfolge' && economy.enabled) {
+    cleanupGame = renderAchievements(app);
   } else {
     renderOverview();
   }
+  document.querySelectorAll('[data-nav]').forEach((a) => a.classList.toggle('is-active', location.hash === a.getAttribute('href')));
   window.scrollTo(0, 0);
 }
 
@@ -248,3 +259,9 @@ updateThemeButton();
 
 window.addEventListener('hashchange', route);
 route();
+
+// Coins, Glücksrad, Erfolge und Shop (nur wenn Supabase eingerichtet ist oder ?demo=1)
+if (economy.enabled) {
+  initEconomyUI();
+  economy.init();
+}
