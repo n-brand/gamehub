@@ -94,7 +94,7 @@ create table if not exists public.equipped (
 -- Aktualisierung älterer Fassungen dieses Skripts (Slots statt ein Design pro Spiel)
 alter table public.shop_items add column if not exists slot text;
 update public.shop_items set slot = game where slot is null;
-do $
+do $$
 begin
   if exists (
     select 1 from information_schema.columns
@@ -103,7 +103,7 @@ begin
     alter table public.equipped rename column game to slot;
   end if;
 end;
-$;
+$$;
 
 -- ---------- Zugriffsrechte (Row Level Security) ----------
 
