@@ -3,7 +3,7 @@
 // mount(container, api) gibt eine Cleanup-Funktion zurück. buildLevel/newRun/stepRun sind reine
 // Simulationsfunktionen ohne DOM – damit wird geprüft, dass jedes Level schaffbar ist.
 
-import { cubeTheme, drawCube } from '../js/designs.js';
+import { cubeTheme, cubeSkin, drawCube } from '../js/designs.js';
 
 const W = 1280; // logische Canvas-Größe (16:9), wird auf die angezeigte Größe skaliert
 const H = 720;
@@ -375,10 +375,17 @@ function saveStore(data) {
   }
 }
 
+// Bestwerte je Level für die Level-Galerie im Spielmenü
+export function levelStats() {
+  const best = loadStore().best || {};
+  return Object.fromEntries(LEVELS.map((l) => [l.id, best[l.id] ? `Bestwert ${best[l.id]} %` : '']));
+}
+
 export function mount(container, api = {}) {
   const store = loadStore();
   store.best = store.best || {};
-  let levelIdx = Math.max(0, LEVELS.findIndex((l) => l.id === store.level));
+  // Level kommt aus dem Spielmenü (api.level), sonst das zuletzt gespielte
+  let levelIdx = Math.max(0, LEVELS.findIndex((l) => l.id === (api.level || store.level)));
   let muted = store.muted === true;
   const levels = LEVELS.map(buildLevel);
 
@@ -390,12 +397,7 @@ export function mount(container, api = {}) {
           <div class="gp-stat"><span>Bestwert</span><b data-best>0 %</b></div>
           <div class="gp-stat" style="grid-column: span 2"><span>Versuche</span><b data-tries>0</b></div>
         </div>
-        <div class="gp-group">
-          <span class="gp-label">Level</span>
-          <div class="gp-seg" role="group" aria-label="Level">
-            ${LEVELS.map((l, i) => `<button type="button" data-level="${i}">${l.name}</button>`).join('')}
-          </div>
-        </div>
+        <div class="gp-stat"><span>Level</span><b data-level-name></b></div>
         <button type="button" class="btn" data-pause>Pause</button>
         <button type="button" class="btn" data-mute></button>
         <p class="gp-hint"><kbd>Leertaste</kbd>, <kbd>↑</kbd> oder Klick = springen, gedrückt halten springt bei jeder Landung. Gelbe Ringe in der Luft anklicken, gelbe Platten katapultieren dich. <kbd>P</kbd> pausiert.</p>
@@ -432,7 +434,8 @@ export function mount(container, api = {}) {
   let shake = 0;
   let flash = 0;
   let respawnTimer = 0;
-  let theme = cubeTheme(api.getDesign?.());
+  let theme = cubeTheme(api.getDesign?.('cubejump-theme'));
+  let skin = cubeSkin(api.getDesign?.('cubejump-skin'));
 
   const percent = () => Math.min(100, Math.floor((run.px / level.length) * 100));
   const best = () => store.best[level.id] || 0;
@@ -484,7 +487,7 @@ export function mount(container, api = {}) {
     for (let i = 0; i < 26; i++) {
       const a = Math.random() * Math.PI * 2;
       const v = 150 + Math.random() * 420;
-      particles.push({ x: cx, y: cy, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 200, life: 1, max: 1, size: 8 + Math.random() * 12, color: theme.cube[i % 2 ? 0 : 1], spin: Math.random() * 10 });
+      particles.push({ x: cx, y: cy, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 200, life: 1, max: 1, size: 8 + Math.random() * 12, color: i % 2 ? skin.body : skin.shade, spin: Math.random() * 10 });
     }
     saveBest();
     renderStats();
@@ -548,11 +551,7 @@ export function mount(container, api = {}) {
     $('[data-progress]').textContent = `${percent()} %`;
     $('[data-best]').textContent = `${best()} %`;
     $('[data-tries]').textContent = tries;
-    container.querySelectorAll('[data-level]').forEach((b) => {
-      const on = Number(b.dataset.level) === levelIdx;
-      b.classList.toggle('is-active', on);
-      b.setAttribute('aria-pressed', on);
-    });
+    $('[data-level-name]').textContent = level.name;
     pauseBtn.textContent = state === 'paused' ? 'Weiter' : 'Pause';
     pauseBtn.disabled = state !== 'playing' && state !== 'paused';
     muteBtn.textContent = muted ? 'Ton an' : 'Ton aus';
@@ -717,7 +716,7 @@ export function mount(container, api = {}) {
     if (shake > 0) ctx.translate((Math.random() - 0.5) * 18 * shake, (Math.random() - 0.5) * 12 * shake);
     drawBackground(pulse, time);
     drawObstacles(pulse, time);
-    if (state !== 'dead') drawCube(ctx, PLAYER_X + B / 2, GROUND_Y - (run.py + 0.5) * B, B, run.angle, theme, time);
+    if (state !== 'dead') drawCube(ctx, PLAYER_X + B / 2, GROUND_Y - (run.py + 0.5) * B, B, run.angle, skin, time);
     drawParticles();
     ctx.setTransform(scale, 0, 0, scale, 0, 0);
     if (flash > 0) {
@@ -749,7 +748,8 @@ export function mount(container, api = {}) {
     raf = requestAnimationFrame(frame);
     const dt = Math.min(0.05, (now - last) / 1000);
     last = now;
-    theme = cubeTheme(api.getDesign?.());
+    theme = cubeTheme(api.getDesign?.('cubejump-theme'));
+    skin = cubeSkin(api.getDesign?.('cubejump-skin'));
     if (state === 'playing') {
       acc += dt;
       while (acc >= STEP && state === 'playing') {
@@ -771,7 +771,7 @@ export function mount(container, api = {}) {
       trailTick += dt;
       if (run.grounded && trailTick > 0.03) {
         trailTick = 0;
-        particles.push({ x: PLAYER_X + 4, y: GROUND_Y - run.py * B - 4, vx: -120 - Math.random() * 80, vy: -40 - Math.random() * 60, life: 0.35, max: 0.35, size: 5 + Math.random() * 4, color: theme.trail });
+        particles.push({ x: PLAYER_X + 4, y: GROUND_Y - run.py * B - 4, vx: -120 - Math.random() * 80, vy: -40 - Math.random() * 60, life: 0.35, max: 0.35, size: 5 + Math.random() * 4, color: skin.trail });
       }
       statsTick += dt;
       if (statsTick > 0.1) {
@@ -858,11 +858,6 @@ export function mount(container, api = {}) {
     saveStore(store);
     renderStats();
   });
-  container.querySelectorAll('[data-level]').forEach((b) =>
-    b.addEventListener('click', () => {
-      if (Number(b.dataset.level) !== levelIdx || state !== 'ready') selectLevel(Number(b.dataset.level));
-    }),
-  );
   // Nach Klick auf einen Button den Fokus lösen, damit die Leertaste wieder springt
   container.addEventListener('click', (e) => e.target.closest('button')?.blur());
 

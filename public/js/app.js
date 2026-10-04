@@ -3,6 +3,7 @@ import * as store from './storage.js';
 import { art } from './art.js';
 import * as economy from './economy.js';
 import { initEconomyUI, renderShop, renderAchievements } from './ui-economy.js';
+import { renderMenu } from './game-menu.js';
 
 const app = document.getElementById('app');
 const search = document.getElementById('search');
@@ -165,6 +166,7 @@ async function renderGame(id) {
         <a href="#/" class="back">← Alle Spiele</a>
         <h1>${escapeHtml(game.title)}</h1>
         <div class="game-actions">
+          <button class="btn" id="menu" hidden>☰ Menü</button>
           <button class="btn" id="fav"></button>
           <button class="btn" id="fullscreen">⛶ Vollbild</button>
         </div>
@@ -194,14 +196,34 @@ async function renderGame(id) {
   const mod = await import(`../games/${id}.js`);
   // Seite könnte inzwischen gewechselt sein
   if (!frame.isConnected) return;
-  cleanupGame = mod.mount(frame, {
+
+  const menuBtn = app.querySelector('#menu');
+  const api = {
     getHighscore: () => store.getHighscore(id),
     submitScore: (score) => store.submitScore(id, score),
     // Runde ans Portal melden (Coins, Erfolge) – result: 'win' | 'loss' | 'draw' | 'score'
     reportResult: (result) => economy.reportResult(id, result),
-    // Ausgerüstetes Shop-Design dieses Spiels
-    getDesign: () => economy.getEquipped(id),
-  });
+    // Ausgerüsteter Shop-Artikel eines Slots (Standard: Slot = Spiel-ID)
+    getDesign: (slot = id) => economy.getEquipped(slot),
+  };
+
+  // Erst das Spielmenü (Level, Designs, Erfolge), dann das Spiel mit der gewählten Stufe
+  const showMenu = () => {
+    cleanupGame?.();
+    menuBtn.hidden = true;
+    const best = store.getHighscore(id);
+    cleanupGame = renderMenu(frame, game, {
+      stats: mod.levelStats?.() || {},
+      best: best ? `Rekord: ${best}` : '',
+      onPlay: (level) => {
+        cleanupGame?.();
+        menuBtn.hidden = false;
+        cleanupGame = mod.mount(frame, { ...api, level });
+      },
+    });
+  };
+  menuBtn.addEventListener('click', showMenu);
+  showMenu();
 }
 
 // ---------- Routing ----------

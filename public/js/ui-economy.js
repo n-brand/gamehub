@@ -50,7 +50,7 @@ export const COIN = `<svg class="i-coin" viewBox="-12 -12 24 24" aria-hidden="tr
 export const DIAMOND = `<svg class="i-diamond" viewBox="-12 -12 24 24" aria-hidden="true">${gemShape(0, 0, 1.05)}</svg>`;
 const GIFT =
   '<svg class="i-gift" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 7.2C10.6 4.4 7.4 3.4 6.4 5.1c-.9 1.6 1.4 2.4 5.6 2.1Zm0 0c1.4-2.8 4.6-3.8 5.6-2.1.9 1.6-1.4 2.4-5.6 2.1Z" fill="#fcc419"/><rect x="3.5" y="11" width="17" height="10" rx="2" fill="#ff8787"/><rect x="2.5" y="7.5" width="19" height="4.5" rx="1.5" fill="#fa5252"/><rect x="10.5" y="7.5" width="3" height="13.5" fill="#fcc419"/></svg>';
-const TROPHY =
+export const TROPHY =
   '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h10v5a5 5 0 0 1-10 0Z" fill="currentColor"/><path d="M7 5H4v2a3 3 0 0 0 3 3m10-5h3v2a3 3 0 0 1-3 3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M10.5 12.5h3V17h-3Z" fill="currentColor"/><rect x="7" y="17" width="10" height="4" rx="1.2" fill="currentColor"/></svg>';
 
 const fmt = (n) => new Intl.NumberFormat('de-DE').format(n || 0);
@@ -410,7 +410,8 @@ export function openWheel() {
 
 // ---------- Seite: Shop ----------
 
-const ANIMATED = new Set(['snake-rainbow', 'snake-gold', 'snake-neon', 'cubejump-gold']);
+// Vorschauen mit Bewegung (Farbverlauf, Funkeln, Leuchten, wippende Würfel)
+const ANIMATED = /rainbow|gold|neon|cube-/;
 
 function priceHtml(item) {
   if (eco.isFree(item)) return '<span class="price">Gratis</span>';
@@ -420,7 +421,7 @@ function priceHtml(item) {
 function shopButton(item) {
   const { user, profile } = eco.state;
   if (!user) return '<button type="button" class="btn" data-login>Anmelden zum Kaufen</button>';
-  const equipped = eco.getEquipped(item.game) === item.id;
+  const equipped = eco.getEquipped(item.slot) === item.id;
   if (equipped) return '<button type="button" class="btn is-equipped" disabled>Ausgerüstet ✓</button>';
   if (eco.owns(item.id)) return `<button type="button" class="btn" data-equip="${item.id}">Ausrüsten</button>`;
   const missingCoins = item.price_coins - profile.coins;
@@ -467,6 +468,20 @@ export function renderShop(container) {
     if (games.length && !games.includes(activeGame)) activeGame = games[0];
     const items = eco.state.catalog.items.filter((i) => i.game === activeGame);
     const gameTitle = (id) => GAMES.find((g) => g.id === id)?.title || id;
+    // Artikel nach Slot gruppieren (z. B. Würfelsprung: Themes und Würfel), Überschrift aus games.js
+    const slotMeta = GAMES.find((g) => g.id === activeGame)?.slots || [];
+    const groups = [...new Set(items.map((i) => i.slot))].map((slot) => ({
+      label: slotMeta.find((s) => s.id === slot)?.label || '',
+      items: items.filter((i) => i.slot === slot),
+    }));
+    const card = (item) => `
+            <article class="shop-card ${eco.getEquipped(item.slot) === item.id && eco.state.user ? 'is-equipped' : ''}">
+              <canvas class="shop-preview" width="320" height="200" data-design="${item.id}"></canvas>
+              <div class="shop-body">
+                <div class="shop-title"><h3>${esc(item.name)}</h3>${priceHtml(item)}</div>
+                ${shopButton(item)}
+              </div>
+            </article>`;
     container.innerHTML = `
       <section class="page">
         <div class="page-head">
@@ -476,20 +491,13 @@ export function renderShop(container) {
         ${eco.state.user ? '' : '<div class="page-cta">Melde dich an, um Coins zu sammeln und Designs zu kaufen. <button type="button" class="btn btn--primary btn--sm" data-login>Mit Google anmelden</button></div>'}
         ${games.length > 1 ? `<nav class="chips">${games.map((g) => `<button class="chip ${g === activeGame ? 'chip--active' : ''}" data-shop-game="${g}">${esc(gameTitle(g))}</button>`).join('')}</nav>` : `<h2 class="page-sub">${esc(gameTitle(activeGame))}</h2>`}
         ${items.length ? '' : '<p class="empty">Der Shop ist gerade nicht erreichbar.</p>'}
-        <div class="shop-grid">
-          ${items
-            .map(
-              (item) => `
-            <article class="shop-card ${eco.getEquipped(item.game) === item.id && eco.state.user ? 'is-equipped' : ''}">
-              <canvas class="shop-preview" width="320" height="200" data-design="${item.id}"></canvas>
-              <div class="shop-body">
-                <div class="shop-title"><h3>${esc(item.name)}</h3>${priceHtml(item)}</div>
-                ${shopButton(item)}
-              </div>
-            </article>`,
-            )
-            .join('')}
-        </div>
+        ${groups
+          .map(
+            (g) => `
+          ${groups.length > 1 && g.label ? `<h2 class="page-sub">${esc(g.label)}</h2>` : ''}
+          <div class="shop-grid">${g.items.map(card).join('')}</div>`,
+          )
+          .join('')}
       </section>`;
     container.querySelectorAll('canvas[data-design]').forEach((c) => drawPreview(c, c.dataset.design, performance.now()));
   };
@@ -513,7 +521,7 @@ export function renderShop(container) {
   const animate = (t) => {
     raf = requestAnimationFrame(animate);
     container.querySelectorAll('canvas[data-design]').forEach((c) => {
-      if (ANIMATED.has(c.dataset.design)) drawPreview(c, c.dataset.design, t);
+      if (ANIMATED.test(c.dataset.design)) drawPreview(c, c.dataset.design, t);
     });
   };
 

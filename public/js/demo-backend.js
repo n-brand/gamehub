@@ -62,19 +62,27 @@ const CATALOG = {
     id, game, name, description, stat, threshold, reward_coins, reward_diamonds, sort,
   })),
   shop_items: [
-    ['snake-classic', 'snake', 'Klassisch', 0, 0, 0],
-    ['snake-fire', 'snake', 'Feuer', 400, 0, 10],
-    ['snake-zebra', 'snake', 'Zebra', 600, 0, 20],
-    ['snake-neon', 'snake', 'Neon', 800, 0, 30],
-    ['snake-rainbow', 'snake', 'Regenbogen', 0, 5, 40],
-    ['snake-gold', 'snake', 'Gold', 0, 10, 50],
-    ['cubejump-classic', 'cubejump', 'Klassisch', 0, 0, 100],
-    ['cubejump-sunset', 'cubejump', 'Sonnenuntergang', 400, 0, 110],
-    ['cubejump-ice', 'cubejump', 'Eis', 600, 0, 120],
-    ['cubejump-neon', 'cubejump', 'Neon', 800, 0, 130],
-    ['cubejump-lava', 'cubejump', 'Lava', 0, 5, 140],
-    ['cubejump-gold', 'cubejump', 'Gold', 0, 10, 150],
-  ].map(([id, game, name, price_coins, price_diamonds, sort]) => ({ id, game, name, price_coins, price_diamonds, sort })),
+    ['snake-classic', 'snake', 'snake', 'Klassisch', 0, 0, 0],
+    ['snake-fire', 'snake', 'snake', 'Feuer', 400, 0, 10],
+    ['snake-zebra', 'snake', 'snake', 'Zebra', 600, 0, 20],
+    ['snake-neon', 'snake', 'snake', 'Neon', 800, 0, 30],
+    ['snake-rainbow', 'snake', 'snake', 'Regenbogen', 0, 5, 40],
+    ['snake-gold', 'snake', 'snake', 'Gold', 0, 10, 50],
+    ['cubejump-classic', 'cubejump', 'cubejump-theme', 'Klassisch', 0, 0, 100],
+    ['cubejump-sunset', 'cubejump', 'cubejump-theme', 'Sonnenuntergang', 400, 0, 110],
+    ['cubejump-ice', 'cubejump', 'cubejump-theme', 'Eis', 600, 0, 120],
+    ['cubejump-neon', 'cubejump', 'cubejump-theme', 'Neon', 800, 0, 130],
+    ['cubejump-lava', 'cubejump', 'cubejump-theme', 'Lava', 0, 5, 140],
+    ['cubejump-gold', 'cubejump', 'cubejump-theme', 'Gold', 0, 10, 150],
+    ['cube-classic', 'cubejump', 'cubejump-skin', 'Klassisch', 0, 0, 200],
+    ['cube-fire', 'cubejump', 'cubejump-skin', 'Feuer', 300, 0, 210],
+    ['cube-ice', 'cubejump', 'cubejump-skin', 'Eiswürfel', 300, 0, 220],
+    ['cube-slime', 'cubejump', 'cubejump-skin', 'Schleim', 500, 0, 230],
+    ['cube-robot', 'cubejump', 'cubejump-skin', 'Roboter', 500, 0, 240],
+    ['cube-ninja', 'cubejump', 'cubejump-skin', 'Ninja', 700, 0, 250],
+    ['cube-diamond', 'cubejump', 'cubejump-skin', 'Diamant', 0, 5, 260],
+    ['cube-crown', 'cubejump', 'cubejump-skin', 'König', 0, 8, 270],
+  ].map(([id, game, slot, name, price_coins, price_diamonds, sort]) => ({ id, game, slot, name, price_coins, price_diamonds, sort })),
 };
 
 const today = (offset = 0) =>
@@ -130,7 +138,7 @@ export function createDemoClient({ ownAll = false } = {}) {
       case 'inventory':
         return db.inventory.map((item_id) => ({ item_id }));
       case 'equipped':
-        return Object.entries(db.equipped).map(([game, item_id]) => ({ game, item_id }));
+        return Object.entries(db.equipped).map(([slot, item_id]) => ({ slot, item_id }));
       case 'user_achievements':
         return db.user_achievements;
       case 'game_stats':
@@ -276,8 +284,8 @@ export function createDemoClient({ ownAll = false } = {}) {
       if (!item) return fail('Unbekannter Artikel');
       const free = !item.price_coins && !item.price_diamonds;
       if (!free && !db.inventory.includes(p_item)) return fail('Artikel nicht im Besitz');
-      db.equipped[item.game] = p_item;
-      return { data: { game: item.game, item: p_item }, error: null };
+      db.equipped[item.slot] = p_item;
+      return { data: { slot: item.slot, item: p_item }, error: null };
     },
 
     // Nur im Demo-Modus: alles freischalten bzw. von vorn beginnen (angemeldet bleiben)

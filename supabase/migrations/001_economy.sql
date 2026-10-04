@@ -70,6 +70,7 @@ create table if not exists public.user_achievements (
 create table if not exists public.shop_items (
   id text primary key,
   game text not null,
+  slot text not null, -- Shop-Kategorie; pro Slot ist ein Artikel ausgerüstet (z. B. cubejump-theme, cubejump-skin)
   name text not null,
   price_coins integer not null default 0,
   price_diamonds integer not null default 0,
@@ -85,10 +86,24 @@ create table if not exists public.inventory (
 
 create table if not exists public.equipped (
   user_id uuid not null references public.profiles (id) on delete cascade,
-  game text not null,
+  slot text not null,
   item_id text not null references public.shop_items (id) on delete cascade,
-  primary key (user_id, game)
+  primary key (user_id, slot)
 );
+
+-- Aktualisierung älterer Fassungen dieses Skripts (Slots statt ein Design pro Spiel)
+alter table public.shop_items add column if not exists slot text;
+update public.shop_items set slot = game where slot is null;
+do $
+begin
+  if exists (
+    select 1 from information_schema.columns
+     where table_schema = 'public' and table_name = 'equipped' and column_name = 'game'
+  ) then
+    alter table public.equipped rename column game to slot;
+  end if;
+end;
+$;
 
 -- ---------- Zugriffsrechte (Row Level Security) ----------
 
@@ -510,7 +525,7 @@ begin
 end;
 $$;
 
--- Design ausrüsten (eins pro Spiel)
+-- Design ausrüsten (eins pro Slot, z. B. ein Theme und ein Würfel-Skin)
 create or replace function public.equip_item(p_item text)
 returns jsonb
 language plpgsql
@@ -533,10 +548,10 @@ begin
      and not exists (select 1 from public.inventory where user_id = v_uid and item_id = p_item) then
     raise exception 'Artikel nicht im Besitz' using errcode = 'P0001';
   end if;
-  insert into public.equipped (user_id, game, item_id)
-  values (v_uid, v_item.game, p_item)
-  on conflict (user_id, game) do update set item_id = excluded.item_id;
-  return jsonb_build_object('game', v_item.game, 'item', p_item);
+  insert into public.equipped (user_id, slot, item_id)
+  values (v_uid, v_item.slot, p_item)
+  on conflict (user_id, slot) do update set item_id = excluded.item_id;
+  return jsonb_build_object('slot', v_item.slot, 'item', p_item);
 end;
 $$;
 
@@ -631,21 +646,30 @@ on conflict (id) do update set
   reward_diamonds = excluded.reward_diamonds,
   sort = excluded.sort;
 
-insert into public.shop_items (id, game, name, price_coins, price_diamonds, sort) values
-  ('snake-classic', 'snake', 'Klassisch',    0,  0,  0),
-  ('snake-fire',    'snake', 'Feuer',      400,  0, 10),
-  ('snake-zebra',   'snake', 'Zebra',      600,  0, 20),
-  ('snake-neon',    'snake', 'Neon',       800,  0, 30),
-  ('snake-rainbow', 'snake', 'Regenbogen',   0,  5, 40),
-  ('snake-gold',    'snake', 'Gold',         0, 10, 50),
-  ('cubejump-classic', 'cubejump', 'Klassisch',         0,  0, 100),
-  ('cubejump-sunset',  'cubejump', 'Sonnenuntergang', 400,  0, 110),
-  ('cubejump-ice',     'cubejump', 'Eis',             600,  0, 120),
-  ('cubejump-neon',    'cubejump', 'Neon',            800,  0, 130),
-  ('cubejump-lava',    'cubejump', 'Lava',              0,  5, 140),
-  ('cubejump-gold',    'cubejump', 'Gold',              0, 10, 150)
+insert into public.shop_items (id, game, slot, name, price_coins, price_diamonds, sort) values
+  ('snake-classic',    'snake',    'snake',          'Klassisch',         0,  0,   0),
+  ('snake-fire',       'snake',    'snake',          'Feuer',           400,  0,  10),
+  ('snake-zebra',      'snake',    'snake',          'Zebra',           600,  0,  20),
+  ('snake-neon',       'snake',    'snake',          'Neon',            800,  0,  30),
+  ('snake-rainbow',    'snake',    'snake',          'Regenbogen',        0,  5,  40),
+  ('snake-gold',       'snake',    'snake',          'Gold',              0, 10,  50),
+  ('cubejump-classic', 'cubejump', 'cubejump-theme', 'Klassisch',         0,  0, 100),
+  ('cubejump-sunset',  'cubejump', 'cubejump-theme', 'Sonnenuntergang', 400,  0, 110),
+  ('cubejump-ice',     'cubejump', 'cubejump-theme', 'Eis',             600,  0, 120),
+  ('cubejump-neon',    'cubejump', 'cubejump-theme', 'Neon',            800,  0, 130),
+  ('cubejump-lava',    'cubejump', 'cubejump-theme', 'Lava',              0,  5, 140),
+  ('cubejump-gold',    'cubejump', 'cubejump-theme', 'Gold',              0, 10, 150),
+  ('cube-classic',     'cubejump', 'cubejump-skin',  'Klassisch',         0,  0, 200),
+  ('cube-fire',        'cubejump', 'cubejump-skin',  'Feuer',           300,  0, 210),
+  ('cube-ice',         'cubejump', 'cubejump-skin',  'Eiswürfel',       300,  0, 220),
+  ('cube-slime',       'cubejump', 'cubejump-skin',  'Schleim',         500,  0, 230),
+  ('cube-robot',       'cubejump', 'cubejump-skin',  'Roboter',         500,  0, 240),
+  ('cube-ninja',       'cubejump', 'cubejump-skin',  'Ninja',           700,  0, 250),
+  ('cube-diamond',     'cubejump', 'cubejump-skin',  'Diamant',           0,  5, 260),
+  ('cube-crown',       'cubejump', 'cubejump-skin',  'König',             0,  8, 270)
 on conflict (id) do update set
   game = excluded.game,
+  slot = excluded.slot,
   name = excluded.name,
   price_coins = excluded.price_coins,
   price_diamonds = excluded.price_diamonds,

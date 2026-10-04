@@ -137,6 +137,30 @@ Seite `#/erfolge` mit Fortschrittsbalken; Freischaltung als Einblendung.
 
 Würfelsprung-Belohnung pro geschafftem Level: Leicht 30, Mittel 60, Schwer 150 Coins; Erfolge für jedes Level (Schwer: 5 Diamanten). „Allrounder“ zählt jetzt 8 Spiele.
 
+### Nachtrag: Slots und Würfel-Skins
+
+Ein Spiel kann mehrere Design-Plätze haben. `shop_items.slot` sagt, wo ein Artikel ausgerüstet wird,
+`equipped` hat den Schlüssel `(user_id, slot)`. Plätze: `snake`, `cubejump-theme` (Umgebung),
+`cubejump-skin` (Würfel). Theme und Skin sind frei kombinierbar.
+
+| ID | Würfel | Preis |
+|---|---|---|
+| `cube-classic` | Klassisch | gratis |
+| `cube-fire` | Feuer | 300 Coins |
+| `cube-ice` | Eiswürfel | 300 Coins |
+| `cube-slime` | Schleim | 500 Coins |
+| `cube-robot` | Roboter | 500 Coins |
+| `cube-ninja` | Ninja | 700 Coins |
+| `cube-diamond` | Diamant | 5 Diamanten |
+| `cube-crown` | König | 8 Diamanten |
+
+### Nachtrag: Spielmenü
+
+Vor jedem Spiel erscheint ein Menü (`public/js/game-menu.js`): Illustration, Rekord, „Spielen“,
+Level-Galerie (jede Stufe mit eigener Farbe, aus `levels` in `games.js`), Design-Galerien pro Slot
+(eigene ausrüsten, gesperrte zeigen Preis und Link zum Shop) und die Erfolge des Spiels mit Fortschritt.
+Das gewählte Level geht als `api.level` an `mount`; „☰ Menü“ in der Kopfzeile führt zurück.
+
 ## Oberfläche
 
 - Kopfzeile: Kontostand (Coins, Diamanten), Geschenk-Symbol für den täglichen Bonus (wackelt mit Punkt, solange abholbar), Links „Shop“ und „Erfolge“,

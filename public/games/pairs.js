@@ -78,10 +78,17 @@ const fmtTime = (ms) => {
 // Weniger Züge sind besser, bei Gleichstand zählt die Zeit
 const isBetter = (a, b) => !b || a.moves < b.moves || (a.moves === b.moves && a.time < b.time);
 
+// Rekorde je Größe für die Level-Galerie im Spielmenü
+export function levelStats() {
+  const best = load().best || {};
+  return Object.fromEntries(Object.keys(LEVELS).map((k) => [k, best[k] ? `Rekord: ${best[k].moves} Züge` : '']));
+}
+
 export function mount(container, api = {}) {
   const data = load();
   data.best = data.best || {};
-  let level = LEVELS[data.level] ? data.level : 'medium';
+  // Größe kommt aus dem Spielmenü (api.level), sonst die zuletzt gespielte
+  let level = LEVELS[api.level] ? api.level : LEVELS[data.level] ? data.level : 'medium';
 
   container.innerHTML = `
     <div class="gp pairs">
@@ -91,14 +98,6 @@ export function mount(container, api = {}) {
           <div class="gp-stat"><span>Zeit</span><b data-time>0:00</b></div>
           <div class="gp-stat"><span>Paare</span><b data-found>0</b></div>
           <div class="gp-stat"><span>Rekord</span><b data-best>–</b></div>
-        </div>
-        <div class="gp-group">
-          <span class="gp-label">Karten</span>
-          <div class="gp-seg" role="group" aria-label="Anzahl Karten">
-            ${Object.entries(LEVELS)
-              .map(([key, l]) => `<button type="button" data-level="${key}">${l.cols * l.rows}</button>`)
-              .join('')}
-          </div>
         </div>
         <button type="button" class="btn btn--primary" data-new>Neues Spiel</button>
         <p class="gp-hint">Finde alle Paare mit möglichst wenigen Zügen.</p>

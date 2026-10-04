@@ -25,7 +25,7 @@ export const state = {
   user: null, // { id, name, avatar }
   profile: emptyProfile(),
   inventory: new Set(),
-  equipped: {}, // Spiel → Artikel-ID
+  equipped: {}, // Slot → Artikel-ID (z. B. snake, cubejump-theme, cubejump-skin)
   stats: {}, // Spiel → { plays, wins, best_score, data }
   unlocked: new Map(), // Erfolg-ID → Datum
   catalog: { items: [], achievements: [], wheel: [], rules: [] },
@@ -160,13 +160,13 @@ async function loadPlayer() {
   const [profile, inventory, equipped, unlocked, stats] = await Promise.all([
     client.from('profiles').select('coins, diamonds, spin_streak, last_spin').eq('id', state.user.id).maybeSingle(),
     client.from('inventory').select('item_id'),
-    client.from('equipped').select('game, item_id'),
+    client.from('equipped').select('slot, item_id'),
     client.from('user_achievements').select('achievement_id, unlocked_at'),
     client.from('game_stats').select('game, plays, wins, best_score, data'),
   ]);
   state.profile = profile.data || emptyProfile();
   state.inventory = new Set((inventory.data || []).map((r) => r.item_id));
-  state.equipped = Object.fromEntries((equipped.data || []).map((r) => [r.game, r.item_id]));
+  state.equipped = Object.fromEntries((equipped.data || []).map((r) => [r.slot, r.item_id]));
   state.unlocked = new Map((unlocked.data || []).map((r) => [r.achievement_id, r.unlocked_at]));
   state.stats = Object.fromEntries((stats.data || []).map((r) => [r.game, r]));
 }
@@ -185,11 +185,14 @@ export function owns(itemId) {
   return Boolean(item) && (isFree(item) || state.inventory.has(itemId));
 }
 
-// Aktives Design eines Spiels (ohne Login: das Gratis-Design)
-export function getEquipped(game) {
-  const id = state.user && state.equipped[game];
+// Gratis-Standard je Slot, falls der Katalog (noch) nicht geladen ist
+const DEFAULT_ITEMS = { snake: 'snake-classic', 'cubejump-theme': 'cubejump-classic', 'cubejump-skin': 'cube-classic' };
+
+// Aktiver Artikel eines Slots (ohne Login: der Gratis-Artikel)
+export function getEquipped(slot) {
+  const id = state.user && state.equipped[slot];
   if (id) return id;
-  return state.catalog.items.find((i) => i.game === game && isFree(i))?.id || `${game}-classic`;
+  return state.catalog.items.find((i) => i.slot === slot && isFree(i))?.id || DEFAULT_ITEMS[slot] || `${slot}-classic`;
 }
 
 export function todayBerlin() {
@@ -319,6 +322,6 @@ export async function demoReset() {
 export async function equip(itemId) {
   const { data, error } = await client.rpc('equip_item', { p_item: itemId });
   if (error) throw error;
-  state.equipped = { ...state.equipped, [data.game]: data.item };
+  state.equipped = { ...state.equipped, [data.slot]: data.item };
   emit({ type: 'state' });
 }

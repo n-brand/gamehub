@@ -32,10 +32,17 @@ const fmtTime = (ms) => {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 };
 
+// Bestzeiten je Stufe für die Level-Galerie im Spielmenü
+export function levelStats() {
+  const best = load().best || {};
+  return Object.fromEntries(Object.keys(LEVELS).map((k) => [k, best[k] ? `Bestzeit ${fmtTime(best[k])}` : '']));
+}
+
 export function mount(container, api = {}) {
   const data = load();
   data.best = data.best || {};
-  let level = LEVELS[data.level] ? data.level : 'easy';
+  // Stufe kommt aus dem Spielmenü (api.level), sonst die zuletzt gespielte
+  let level = LEVELS[api.level] ? api.level : LEVELS[data.level] ? data.level : 'easy';
   let flagMode = false;
 
   container.innerHTML = `
@@ -45,14 +52,6 @@ export function mount(container, api = {}) {
           <div class="gp-stat"><span>Minen</span><b data-left>0</b></div>
           <div class="gp-stat"><span>Zeit</span><b data-time>0:00</b></div>
           <div class="gp-stat" style="grid-column: span 2"><span>Rekord</span><b data-best>–</b></div>
-        </div>
-        <div class="gp-group">
-          <span class="gp-label">Schwierigkeit</span>
-          <div class="gp-seg" role="group" aria-label="Schwierigkeit">
-            <button type="button" data-level="easy">Leicht</button>
-            <button type="button" data-level="medium">Mittel</button>
-            <button type="button" data-level="hard">Schwer</button>
-          </div>
         </div>
         <div class="gp-group">
           <span class="gp-label">Klick</span>

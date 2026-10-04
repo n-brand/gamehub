@@ -485,6 +485,9 @@ function saveSettings(settings) {
 
 export function mount(container, api = {}) {
   const settings = loadSettings();
+  // Gegner kommt aus dem Spielmenü: 'duo' = zu zweit, sonst eine Computer-Stärke
+  if (api.level === 'duo') settings.mode = 'duo';
+  else if (LEVELS[api.level]) Object.assign(settings, { mode: 'cpu', level: api.level });
 
   const playerCard = (p) => `
     <div class="c4-player" data-player="${p}">
@@ -497,22 +500,7 @@ export function mount(container, api = {}) {
     <div class="gp c4">
       <div class="gp-panel">
         <div class="c4-players" aria-live="polite">${playerCard(RED)}${playerCard(YELLOW)}</div>
-        <div class="gp-group">
-          <span class="gp-label">Gegner</span>
-          <div class="gp-seg" role="group" aria-label="Gegner">
-            <button type="button" data-mode="cpu">Computer</button>
-            <button type="button" data-mode="duo">Zu zweit</button>
-          </div>
-        </div>
-        <div class="gp-group" data-level-group>
-          <span class="gp-label">Stärke</span>
-          <div class="gp-seg gp-seg--tight" role="group" aria-label="Stärke">
-            <button type="button" data-level="easy">Leicht</button>
-            <button type="button" data-level="medium">Mittel</button>
-            <button type="button" data-level="hard">Schwer</button>
-            <button type="button" data-level="ultra">Ultra</button>
-          </div>
-        </div>
+        <div class="gp-stat"><span>Gegner</span><b data-opponent></b></div>
         <button type="button" class="btn btn--primary" data-new>Neues Spiel</button>
       </div>
       <div class="c4-stage" data-stage>
@@ -538,7 +526,6 @@ export function mount(container, api = {}) {
   const hl = $('[data-hl]');
   const banner = $('[data-banner]');
   const bannerText = $('[data-banner-text]');
-  const levelGroup = $('[data-level-group]');
   const players = { [RED]: $(`[data-player="${RED}"]`), [YELLOW]: $(`[data-player="${YELLOW}"]`) };
 
   const cells = new Int8Array(CELLS);
@@ -609,17 +596,8 @@ export function mount(container, api = {}) {
   }
 
   function renderControls() {
-    container.querySelectorAll('[data-mode]').forEach((b) => {
-      const on = b.dataset.mode === settings.mode;
-      b.classList.toggle('is-active', on);
-      b.setAttribute('aria-pressed', on);
-    });
-    container.querySelectorAll('[data-level]').forEach((b) => {
-      const on = b.dataset.level === settings.level;
-      b.classList.toggle('is-active', on);
-      b.setAttribute('aria-pressed', on);
-    });
-    levelGroup.hidden = settings.mode !== 'cpu';
+    const levelNames = { easy: 'Leicht', medium: 'Mittel', hard: 'Schwer', ultra: 'Ultra' };
+    $('[data-opponent]').textContent = settings.mode === 'duo' ? 'Zu zweit' : `Computer · ${levelNames[settings.level]}`;
   }
 
   // ---------- Spielablauf ----------
