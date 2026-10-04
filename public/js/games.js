@@ -76,8 +76,12 @@ export const GAMES = [
     id: 'bricks',
     title: 'Mauerbrecher',
     categories: ['Geschick', 'Action'],
+    teaser: 'Lenk den Ball mit dem Schläger und räum Mauer für Mauer ab.',
+    description: 'Halte den Ball mit dem Schläger im Spiel und zerschlage alle Steine. Gelbe Steine brauchen zwei Treffer. Fang die fallenden Kapseln für einen breiteren Schläger, mehr Bälle oder ein Extraleben.',
+    controls: 'Maus oder ← → bewegen den Schläger, Klick oder Leertaste startet den Ball, P oder Esc pausiert. Wo der Ball den Schläger trifft, bestimmt den Abprallwinkel.',
     theme: { bg: '#ff8787', edge: '#e03131', ink: '#ffffff' },
-    available: false,
+    badge: 'NEU',
+    available: true,
   },
 ];
 

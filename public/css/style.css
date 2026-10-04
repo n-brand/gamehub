@@ -976,3 +976,22 @@ section h2 { font-size: 1.3rem; font-weight: 900; margin: 32px 0 14px; }
 @container (max-width: 760px) {
   .ms-field { width: min(100cqi, (100cqh - 170px) / var(--ratio)); }
 }
+
+/* ---------- Mauerbrecher ---------- */
+.bk-field {
+  position: relative;
+  flex: none;
+  width: min(100cqi - 268px, 100cqh * 4 / 3);
+  aspect-ratio: 4 / 3;
+  border-radius: 18px;
+  box-shadow: 0 8px 0 rgba(0, 0, 0, 0.18);
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.bk-field canvas { display: block; width: 100%; height: 100%; border-radius: inherit; }
+.bk-field.is-playing { cursor: none; }
+.bk-lives { display: flex; align-items: center; gap: 2px; min-height: 1.55rem; color: #fff; }
+@container (max-width: 760px) {
+  .bk-field { width: min(100cqi, (100cqh - 170px) * 4 / 3); }
+}
