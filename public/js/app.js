@@ -27,10 +27,20 @@ function badgeFor(game) {
   return text ? `<span class="badge ${game.available ? '' : 'badge--soon'}">${escapeHtml(text)}</span>` : '';
 }
 
-// Wrapper: spielbare Spiele sind Links, geplante nur Kacheln
+const STAR_ON = '<svg viewBox="0 0 24 24"><path d="M12 2.8l2.8 5.8 6.3.9-4.6 4.4 1.1 6.3L12 17.2l-5.6 3 1.1-6.3L2.9 9.5l6.3-.9z" fill="currentColor"/></svg>';
+const STAR_OFF = '<svg viewBox="0 0 24 24"><path d="M12 2.8l2.8 5.8 6.3.9-4.6 4.4 1.1 6.3L12 17.2l-5.6 3 1.1-6.3L2.9 9.5l6.3-.9z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>';
+
+function favButton(game) {
+  const on = store.isFavorite(game.id);
+  const label = on ? 'Aus Favoriten entfernen' : 'Zu Favoriten hinzufügen';
+  return `<button class="fav-btn ${on ? 'is-on' : ''}" data-fav="${game.id}" title="${label}" aria-label="${label}" aria-pressed="${on}">${on ? STAR_ON : STAR_OFF}</button>`;
+}
+
+// Spielbare Spiele: Karte mit unsichtbarem Link über der ganzen Fläche (damit der
+// Favoriten-Button daneben klickbar bleibt). Geplante Spiele: nur Kachel.
 function cardTag(game, cls, inner) {
   return game.available
-    ? `<a class="${cls}" href="#/game/${game.id}" style="${themeVars(game)}">${inner}</a>`
+    ? `<div class="${cls} is-playable" style="${themeVars(game)}"><a class="card-link" href="#/game/${game.id}" aria-label="${escapeHtml(game.title)} spielen"></a>${inner}${favButton(game)}</div>`
     : `<div class="${cls} is-soon" style="${themeVars(game)}" title="Bald verfügbar">${inner}</div>`;
 }
 
@@ -100,6 +110,24 @@ function renderOverview() {
   );
 }
 
+// Favoriten-Stern auf Kacheln und Feature-Karten (Übersicht und „Ähnliche Spiele“)
+app.addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-fav]');
+  if (!btn) return;
+  e.preventDefault();
+  const id = btn.dataset.fav;
+  store.toggleFavorite(id);
+  if (location.hash.startsWith('#/game/')) {
+    // „Ähnliche Spiele“ enthält das aktuelle Spiel nie, also nur den geklickten Stern tauschen
+    btn.outerHTML = favButton(getGame(id));
+  } else {
+    // Abschnitt „Favoriten“ neu aufbauen, Scrollposition behalten
+    const y = window.scrollY;
+    renderOverview();
+    window.scrollTo(0, y);
+  }
+});
+
 // ---------- Spieleseite ----------
 
 async function renderGame(id) {
@@ -143,7 +171,7 @@ async function renderGame(id) {
     else frame.requestFullscreen?.();
   });
 
-  const mod = await import(`/games/${id}.js`);
+  const mod = await import(`../games/${id}.js`);
   // Seite könnte inzwischen gewechselt sein
   if (!frame.isConnected) return;
   cleanupGame = mod.mount(frame, {

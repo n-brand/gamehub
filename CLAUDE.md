@@ -7,6 +7,10 @@
   `Nicolas <227780975+n-brand@users.noreply.github.com>`
 - This is set in the repo-local git config (`git config user.email`). Before committing, verify it with `git config user.email` and do not override it with `--author` or environment variables.
 
+## Befehle für den Nutzer
+
+- Befehle, die der Nutzer selbst ausführen soll, immer für **PowerShell** schreiben, **ohne `&&`**, ein Befehl pro Codeblock.
+
 ## Design-Grundsatz
 
 - **Desktop first:** Layout und Spiele werden primär für große Desktop-Bildschirme gebaut; Spielfelder sollen den verfügbaren Platz groß ausnutzen. Mobil muss funktionieren, ist aber zweitrangig.
@@ -23,12 +27,13 @@
 **Aktueller Stand (2026-10-03):**
 - Grundgerüst der Plattform steht: reines HTML/CSS/JS ohne Build-Schritt und ohne npm-Abhängigkeiten.
 - Lokal starten: `npm run dev` (bzw. `node server.js`) → http://localhost:4177
+- Online: https://n-brand.github.io/gamehub/ – GitHub Actions (`.github/workflows/pages.yml`) veröffentlicht `public/` bei jedem Push auf `main`. Pfade in `public/` müssen relativ sein (Seite läuft unter `/gamehub/`).
 - Design im Font-Awesome-Stil umgesetzt (siehe Design-Grundsatz).
-- Übersicht: Hero, 3 große Feature-Karten, Kategorie-Filter, Suche, „Zuletzt gespielt“, Favoriten, alle Spiele als illustrierte Kacheln. Geplante Spiele erscheinen als „Bald“-Kacheln (2048, Vier gewinnt, Memory, Minesweeper, Tetris, Breakout).
+- Übersicht: Hero, 3 große Feature-Karten, Kategorie-Filter, Suche, „Zuletzt gespielt“, Favoriten, alle Spiele als illustrierte Kacheln. Favoriten lassen sich direkt auf Kacheln/Feature-Karten per Stern (oben links, erscheint beim Hovern; markierte immer sichtbar) setzen und entfernen. Geplante Spiele erscheinen als „Bald“-Kacheln (2048, Vier gewinnt, Memory, Minesweeper, Tetris, Breakout).
 - Spieleseite: Spiel in farbigem Rahmen (Spielfarbe), Vollbild, Favorit, Beschreibung/Steuerung, ähnliche Spiele.
 - Fertige Spiele: **Snake** im Google-Snake-Stil (17×15 Feld, flüssige Bewegung, Augen, Apfel, Tastatur/Wischen/Touch-Buttons, Pause, lokaler Highscore).
 - Daten (zuletzt gespielt, Favoriten, Highscores) nur lokal im Browser (`localStorage`), noch kein Backend.
-- Nächste Schritte: weitere Spiele (selbst bauen oder Open-Source übernehmen, siehe unten), später Backend (Supabase oder Cloudflare) für Accounts/Bestenlisten.
+- Nächste Schritte: weitere Spiele (selbst bauen oder Open-Source übernehmen, siehe unten), später Backend mit **Supabase** für Accounts/Bestenlisten.
 
 **Aufbau:**
 - `server.js` – minimaler Dev-Server, liefert `public/` aus
@@ -102,7 +107,7 @@ Multiplayer (später):
 - Quiz-Duell
 - Kleines Echtzeit-Spiel (z. B. agar.io-ähnlich)
 
-### Mögliche Technik (noch nicht entschieden)
-- Frontend: Cloudflare Pages
-- Backend/Daten: Supabase (Accounts, Highscores, Favoriten, Echtzeit für rundenbasierte Multiplayer-Spiele) oder komplett Cloudflare (Workers, D1, Durable Objects für Echtzeit-Multiplayer)
-- Beides läuft im Free Tier
+### Technik
+- **Backend: Supabase (entschieden, kommt später)** – für Accounts/Login, geräteübergreifende Favoriten und „Zuletzt gespielt“, Highscores/Bestenlisten und Echtzeit für rundenbasierte Multiplayer-Spiele. Bis dahin bleibt alles in `localStorage` (`public/js/storage.js`); diese Datei ist die Stelle, an der Supabase später angebunden wird.
+- Frontend-Hosting: voraussichtlich Cloudflare Pages (noch nicht entschieden)
+- Beides läuft im Free Tier (Achtung: Supabase pausiert Free-Projekte nach ca. 1 Woche Inaktivität)
