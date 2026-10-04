@@ -58,8 +58,12 @@ export const GAMES = [
     id: 'minesweeper',
     title: 'Minesweeper',
     categories: ['Puzzle', 'Klassiker'],
+    teaser: 'Finde alle Minen – die Zahlen verraten, wie viele in der Nähe liegen.',
+    description: 'Decke alle Felder auf, unter denen keine Mine liegt. Jede Zahl zeigt, wie viele Minen um das Feld herum versteckt sind. Markiere Minen mit Flaggen – und denk nach, bevor du klickst.',
+    controls: 'Linksklick deckt auf, Rechtsklick setzt eine Flagge. Klick auf eine Zahl deckt die Nachbarn auf, wenn genug Flaggen stehen. Tastatur: Pfeiltasten, Enter, F für Flagge. Handy: lange drücken für eine Flagge.',
     theme: { bg: '#dee2e6', edge: '#868e96', ink: '#212529' },
-    available: false,
+    badge: 'NEU',
+    available: true,
   },
   {
     id: 'blocks',
