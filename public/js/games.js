@@ -36,9 +36,12 @@ export const GAMES = [
     title: 'Vier gewinnt',
     categories: ['Multiplayer', 'Klassiker'],
     teaser: 'Vier Steine in eine Reihe – gegen Freunde oder den Computer.',
+    description: 'Lass deine Steine in die Spalten fallen und bilde als Erster eine Reihe aus vier – waagerecht, senkrecht oder diagonal. Spiele gegen den Computer in drei Stärken oder zu zweit an einem Gerät.',
+    controls: 'Maus: Spalte anklicken. Tastatur: ← → zum Zielen, Enter, Leertaste oder ↓ zum Einwerfen – oder direkt die Tasten 1–7. Auf dem Handy: Spalte antippen.',
     theme: { bg: '#24477d', edge: '#14294a', ink: '#ffffff' },
+    badge: 'NEU',
     featured: true,
-    available: false,
+    available: true,
   },
   {
     id: 'memory',

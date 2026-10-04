@@ -567,3 +567,184 @@ section h2 { font-size: 1.3rem; font-weight: 900; margin: 32px 0 14px; }
   from { opacity: 0; }
   to { opacity: 1; }
 }
+
+/* ---------- Vier gewinnt ---------- */
+.c4 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 28px;
+  width: 100%;
+  height: 100%;
+  color: #fff;
+}
+.c4-panel {
+  flex: none;
+  width: 240px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.c4-players { display: flex; flex-direction: column; gap: 10px; }
+.c4-player {
+  --chip: #fa5252;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.07);
+  transition: background 0.2s, box-shadow 0.2s, transform 0.2s;
+}
+.c4-player[data-player="2"] { --chip: #fcc419; }
+.c4-player.is-turn, .c4-player.is-winner {
+  background: rgba(255, 255, 255, 0.14);
+  box-shadow: inset 0 0 0 2px var(--chip);
+}
+.c4-player.is-turn { transform: translateX(6px); }
+.c4-chip {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--chip);
+  box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.2);
+}
+.c4-player-text { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.2; }
+.c4-player-text b { font-size: 1.05rem; font-weight: 900; }
+.c4-player-text small { min-height: 1.2em; font-size: 0.8rem; font-weight: 700; opacity: 0.75; }
+.c4-score { font-size: 1.7rem; font-weight: 900; }
+.c4-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+.c4-group[hidden] { display: none; }
+.c4-seg { display: flex; gap: 2px; padding: 4px; border-radius: 999px; background: rgba(0, 0, 0, 0.28); }
+.c4-seg button {
+  flex: 1;
+  padding: 7px 6px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #fff;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+.c4-seg button:hover { background: rgba(255, 255, 255, 0.1); }
+.c4-seg button.is-active { background: #fff; color: #183153; }
+
+/* Bühne: quadratisch = Vorschau-Zeile + Brett (Maße in Prozent der 732er SVG-Geometrie) */
+.c4-stage {
+  position: relative;
+  flex: none;
+  width: min(100cqh, 100cqi - 268px);
+  aspect-ratio: 1;
+  container-type: inline-size;
+  user-select: none;
+  touch-action: manipulation;
+}
+.c4-discs { position: absolute; inset: 0; overflow: hidden; }
+.c4-board {
+  position: absolute;
+  left: 0;
+  top: 13.661%;
+  width: 100%;
+  height: 86.339%;
+  border-radius: 4.098% / 4.747%;
+  box-shadow: 0 1.3cqi 0 #364fc7;
+  pointer-events: none;
+}
+.c4-board svg { display: block; width: 100%; height: 100%; }
+.c4-col-hl {
+  position: absolute;
+  top: 13.661%;
+  width: 13.661%;
+  height: 86.339%;
+  border-radius: 2cqi;
+  background: rgba(255, 255, 255, 0.09);
+  pointer-events: none;
+  transition: left 0.12s ease, opacity 0.15s;
+}
+.c4-disc {
+  position: absolute;
+  width: 10.929%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: #fa5252;
+  box-shadow: inset 0 -0.7cqi 0 rgba(0, 0, 0, 0.2);
+}
+.c4-disc[data-p="2"] { background: #fcc419; }
+.c4-disc::after {
+  content: '';
+  position: absolute;
+  inset: 22%;
+  border-radius: 50%;
+  border: 0.6cqi solid rgba(0, 0, 0, 0.13);
+}
+.c4-preview { top: 1.366%; pointer-events: none; transition: left 0.12s ease, opacity 0.15s; }
+.c4-preview.is-hidden, .c4-col-hl.is-hidden { opacity: 0; }
+.c4-discs .c4-disc { transition: opacity 0.4s; }
+.c4-stage.is-over .c4-discs .c4-disc:not(.is-win) { opacity: 0.35; }
+.c4-disc.is-win { animation: c4-win 0.9s ease-in-out infinite; }
+.c4-disc.is-win::after { border-color: #fff; border-width: 0.9cqi; }
+@keyframes c4-win { 50% { scale: 1.1; } }
+
+.c4-cols {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  padding: 0 2.186%;
+}
+.c4-cols button {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.c4-stage.is-locked .c4-cols button { cursor: default; }
+.c4-banner {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 4;
+  height: 13.661%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.6cqi;
+  animation: c4-banner 0.35s ease-out;
+}
+.c4-banner[hidden] { display: none; }
+.c4-banner-text {
+  padding: 0.9cqi 2.6cqi;
+  border-radius: 999px;
+  background: #fff;
+  color: #183153;
+  font-size: clamp(15px, 3.4cqi, 30px);
+  font-weight: 900;
+}
+.c4-banner .btn { padding: 0.9cqi 2.6cqi; font-size: clamp(14px, 2.6cqi, 22px); }
+@keyframes c4-banner {
+  from { opacity: 0; transform: translateY(-30%); }
+}
+
+/* Schmaler Spielrahmen: Bedienfeld über das Brett */
+@container (max-width: 760px) {
+  .c4 { flex-direction: column; gap: 14px; }
+  .c4-panel { width: 100%; flex-direction: row; flex-wrap: wrap; justify-content: center; gap: 10px; }
+  .c4-players { flex-direction: row; }
+  .c4-player.is-turn { transform: none; }
+  .c4-label { display: none; }
+  .c4-stage { width: min(100cqi, 100cqh - 150px); }
+}
