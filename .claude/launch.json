@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "gamehub",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["server.js", "4177"],
+      "port": 4177,
+      "autoPort": false
+    }
+  ]
+}

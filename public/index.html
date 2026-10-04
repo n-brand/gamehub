@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GameHub</title>
+  <link rel="icon" href="/thumbs/snake.svg">
+  <script>
+    // Theme vor dem ersten Zeichnen setzen (kein Aufblitzen). Standard: dark.
+    try {
+      if (localStorage.getItem('gamehub-theme') === 'light') document.documentElement.dataset.theme = 'light';
+    } catch {}
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;700;800;900&display=swap">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <a href="#/" class="logo">Game<span>Hub</span></a>
+    <input id="search" class="search" type="search" placeholder="Spiele suchen …" autocomplete="off">
+    <button id="theme-toggle" class="theme-toggle" type="button"></button>
+  </header>
+  <main id="app"></main>
+  <script type="module" src="/js/app.js"></script>
+</body>
+</html>
