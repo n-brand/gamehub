@@ -31,9 +31,9 @@
 - Lokal starten: `npm run dev` (bzw. `node server.js`) → http://localhost:4177
 - Online: https://n-brand.github.io/gamehub/ – GitHub Actions (`.github/workflows/pages.yml`) veröffentlicht `public/` bei jedem Push auf `main`. Pfade in `public/` müssen relativ sein (Seite läuft unter `/gamehub/`).
 - Design im Font-Awesome-Stil umgesetzt (siehe Design-Grundsatz).
-- Übersicht: Hero, 3 große Feature-Karten, Kategorie-Filter, Suche, „Zuletzt gespielt“, Favoriten, alle Spiele als illustrierte Kacheln. Favoriten lassen sich direkt auf Kacheln/Feature-Karten per Stern (oben links, erscheint beim Hovern; markierte immer sichtbar) setzen und entfernen. Geplante Spiele erscheinen als „Bald“-Kacheln (Memory, Minesweeper, Tetris, Breakout).
+- Übersicht: Hero, 3 große Feature-Karten, Kategorie-Filter, Suche, „Zuletzt gespielt“, Favoriten, alle Spiele als illustrierte Kacheln. Favoriten lassen sich direkt auf Kacheln/Feature-Karten per Stern (oben links, erscheint beim Hovern; markierte immer sichtbar) setzen und entfernen. Geplante Spiele erscheinen als „Bald“-Kacheln (Minesweeper, Blockfall = Tetris-Prinzip, Mauerbrecher = Breakout-Prinzip; neutrale Namen wegen Markenrecht).
 - Spieleseite: Spiel in farbigem Rahmen (Spielfarbe), Vollbild, Favorit, Beschreibung/Steuerung, ähnliche Spiele.
-- Fertige Spiele: **Vier gewinnt** (gegen Computer in 3 Stärken – Negamax mit Alpha-Beta, Zeitlimit 600 ms – oder zu zweit; Steine fallen hinter das SVG-Brett mit Löchern, Gewinnreihe leuchtet, Startspieler wechselt, Einstellungen in `localStorage` unter `gamehub-connect4`), **2048** (klassische Regeln, gleitende Kacheln mit Verschmelz-Animation, Punkte/Rekord, Sieg bei 2048 mit Weiterspielen, Spielstand wird in `localStorage` unter `gamehub-2048-state` gespeichert), **Snake** im Google-Snake-Stil (17×15 Feld, flüssige Bewegung, Augen, Apfel, Tastatur/Wischen/Touch-Buttons, Pause, lokaler Highscore).
+- Fertige Spiele: **Paare finden** (Memory-Prinzip, Name wegen Ravensburger-Marke „memory“; 12/20/30 Karten, 3D-Umdrehen, Rekord = wenigste Züge pro Größe in `localStorage` unter `gamehub-pairs`), **Vier gewinnt** (gegen Computer in 3 Stärken – Negamax mit Alpha-Beta, Zeitlimit 600 ms – oder zu zweit; Steine fallen hinter das SVG-Brett mit Löchern, Gewinnreihe leuchtet, Startspieler wechselt, Einstellungen in `localStorage` unter `gamehub-connect4`), **2048** (klassische Regeln, gleitende Kacheln mit Verschmelz-Animation, Punkte/Rekord, Sieg bei 2048 mit Weiterspielen, Spielstand wird in `localStorage` unter `gamehub-2048-state` gespeichert), **Snake** im Google-Snake-Stil (17×15 Feld, flüssige Bewegung, Augen, Apfel, Tastatur/Wischen/Touch-Buttons, Pause, lokaler Highscore).
 - Daten (zuletzt gespielt, Favoriten, Highscores) nur lokal im Browser (`localStorage`), noch kein Backend.
 - Nächste Schritte: weitere Spiele (selbst bauen oder Open-Source übernehmen, siehe unten), später Backend mit **Supabase** für Accounts/Bestenlisten.
 
@@ -45,6 +45,7 @@
 - `public/js/storage.js` – localStorage (zuletzt gespielt, Favoriten, Highscores)
 - `public/games/<id>.js` – ein Modul pro Spiel; exportiert `mount(container, api)` und gibt eine Cleanup-Funktion zurück
 - `public/js/art.js` – SVG-Illustration pro Spiel für Kacheln/Feature-Karten
+- Gemeinsame Spiel-Bausteine in `style.css` (`.gp`, `.gp-panel`, `.gp-stats`, `.gp-seg`, `.gp-overlay` …): Bedienfeld neben dem Spielfeld, wird bei schmalem Rahmen per Container-Query darübergesetzt. Neue Spiele nutzen diese Bausteine.
 - `public/thumbs/` – Favicon
 
 ## Open-Source-Spiele (Recherche 2026-10)

@@ -81,7 +81,7 @@ function connect4() {
   `);
 }
 
-function memory() {
+function pairs() {
   const star = (cx, cy) =>
     `<path d="M${cx} ${cy - 22} l6.5 13.5 14.5 2 -10.5 10.2 2.5 14.5 -13 -7 -13 7 2.5 -14.5 -10.5 -10.2 14.5 -2z" fill="#fcc419"/>`;
   const cards = [
@@ -133,7 +133,7 @@ function minesweeper() {
   return svg('#dee2e6', cells);
 }
 
-function tetris() {
+function blocks() {
   const color = { I: '#66d9e8', O: '#ffe066', T: '#f783ac', S: '#8ce99a', Z: '#ff8787', J: '#74c0fc', L: '#ffc078' };
   // Von unten nach oben
   const stack = [
@@ -160,7 +160,7 @@ function tetris() {
   `);
 }
 
-function breakout() {
+function bricks() {
   const rowColors = ['#ffffff', '#ffe3e3', '#ffd8a8', '#fff3bf'];
   const missing = new Set(['1-3', '1-4', '2-4', '0-6', '3-1', '3-2', '2-5']);
   let bricks = '';
@@ -178,7 +178,7 @@ function breakout() {
   `);
 }
 
-const ART = { snake, 2048: game2048, connect4, memory, minesweeper, tetris, breakout };
+const ART = { snake, 2048: game2048, connect4, pairs, minesweeper, blocks, bricks };
 
 export function art(game) {
   const fn = ART[game.id];

@@ -232,25 +232,25 @@ export function mount(container) {
     </div>`;
 
   container.innerHTML = `
-    <div class="c4">
-      <div class="c4-panel">
+    <div class="gp c4">
+      <div class="gp-panel">
         <div class="c4-players" aria-live="polite">${playerCard(RED)}${playerCard(YELLOW)}</div>
-        <div class="c4-group">
-          <span class="c4-label">Gegner</span>
-          <div class="c4-seg" role="group" aria-label="Gegner">
+        <div class="gp-group">
+          <span class="gp-label">Gegner</span>
+          <div class="gp-seg" role="group" aria-label="Gegner">
             <button type="button" data-mode="cpu">Computer</button>
             <button type="button" data-mode="duo">Zu zweit</button>
           </div>
         </div>
-        <div class="c4-group" data-level-group>
-          <span class="c4-label">Stärke</span>
-          <div class="c4-seg" role="group" aria-label="Stärke">
+        <div class="gp-group" data-level-group>
+          <span class="gp-label">Stärke</span>
+          <div class="gp-seg" role="group" aria-label="Stärke">
             <button type="button" data-level="easy">Leicht</button>
             <button type="button" data-level="medium">Mittel</button>
             <button type="button" data-level="hard">Schwer</button>
           </div>
         </div>
-        <button type="button" class="btn btn--primary c4-new" data-new>Neues Spiel</button>
+        <button type="button" class="btn btn--primary" data-new>Neues Spiel</button>
       </div>
       <div class="c4-stage" data-stage>
         <div class="c4-discs" data-discs></div>
