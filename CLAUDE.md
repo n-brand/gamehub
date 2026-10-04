@@ -50,7 +50,7 @@
 - `public/thumbs/` – Favicon
 - `public/js/config.js` – Supabase-URL und öffentlicher Anon-Key (leer = Wirtschaft ausgeblendet)
 - `public/js/economy.js` – einziges Modul mit Backend-Zugriff (Login, Kontostand, reportResult, Glücksrad, Kaufen, Ausrüsten); Ereignisse für die Oberfläche
-- `public/js/ui-economy.js` – Kopfzeile (Kontostand, Glücksrad, Login), Einblendungen, Glücksrad-Fenster, Seiten `#/shop` und `#/erfolge`
+- `public/js/ui-economy.js` – Kopfzeile (Kontostand, Geschenk-Symbol für den täglichen Bonus/Glücksrad, Login), Einblendungen, Glücksrad-Fenster, Seiten `#/shop` und `#/erfolge`
 - `public/js/designs.js` – Aussehen der Shop-Designs (Spiel und Shop-Vorschau)
 - `public/js/demo-backend.js` – Demo-Backend für `?demo=1` (Kataloge bei Änderungen am SQL mitziehen)
 - `supabase/migrations/001_economy.sql` – Tabellen, RLS, Server-Funktionen (`report_result`, `claim_daily_spin`, `buy_item`, `equip_item`), Kataloge; im Supabase-SQL-Editor ausführen

@@ -1091,6 +1091,15 @@ section h2 { font-size: 1.3rem; font-weight: 900; margin: 32px 0 14px; }
 @keyframes dot-pulse {
   50% { scale: 1.25; }
 }
+.wheel-btn svg { width: 26px; height: 26px; }
+.wheel-btn.has-bonus svg { transform-origin: 50% 85%; animation: gift-wiggle 2.6s ease-in-out infinite; }
+@keyframes gift-wiggle {
+  0%, 68%, 100% { rotate: 0deg; }
+  74% { rotate: -14deg; }
+  80% { rotate: 11deg; }
+  86% { rotate: -7deg; }
+  92% { rotate: 3deg; }
+}
 
 .wallet {
   display: flex;

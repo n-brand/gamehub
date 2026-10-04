@@ -79,7 +79,7 @@ ebenfalls an). Artikel mit Preis 0 gelten als Besitz ohne Inventar-Zeile.
   1 Diamant, 5 Diamanten – Gewichte 25 / 22 / 18 / 14 / 10 / 6 / 4 / 1 %.
 - Serie: Faktor auf Coins 1,0 · 1,2 · 1,4 · 1,5 · 1,6 · 1,8 · 2,0 (ab Tag 7); jeder 7. Tag in Folge
   +1 Diamant; ein verpasster Tag setzt zurück.
-- Zugang über ein Symbol in der Kopfzeile, ein Punkt zeigt den verfügbaren Bonus.
+- Zugang über ein Geschenk-Symbol in der Kopfzeile; solange der Bonus abholbar ist, wackelt es und trägt einen roten Punkt.
 
 ## Erfolge
 
@@ -126,7 +126,7 @@ Seite `#/erfolge` mit Fortschrittsbalken; Freischaltung als Einblendung.
 
 ## Oberfläche
 
-- Kopfzeile: Kontostand (Coins, Diamanten), Glücksrad-Symbol mit Punkt, Links „Shop“ und „Erfolge“,
+- Kopfzeile: Kontostand (Coins, Diamanten), Geschenk-Symbol für den täglichen Bonus (wackelt mit Punkt, solange abholbar), Links „Shop“ und „Erfolge“,
   „Mit Google anmelden“ bzw. Profilbild mit Abmelden.
 - Einblendungen unten rechts: „+40 Coins“, „Erfolg freigeschaltet …“.
 - Gäste: nach einer Runde einmal pro Sitzung „Mit Google anmelden und Coins sammeln“.

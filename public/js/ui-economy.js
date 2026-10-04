@@ -10,8 +10,8 @@ export const COIN =
   '<svg class="i-coin" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#fcc419"/><circle cx="12" cy="12" r="6.5" fill="none" stroke="#f59f00" stroke-width="2"/><circle cx="9" cy="8.5" r="1.6" fill="#fff" opacity=".7"/></svg>';
 export const DIAMOND =
   '<svg class="i-diamond" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 3h11L22 9 12 21 2 9Z" fill="#66d9e8"/><path d="M2 9h20M8.5 3 7 9l5 12 5-12-1.5-6M7 9l5-6 5 6" fill="none" stroke="#15aabf" stroke-width="1.3" stroke-linejoin="round"/></svg>';
-const WHEEL =
-  '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M12 2.5v19M2.5 12h19M5.3 5.3l13.4 13.4M18.7 5.3 5.3 18.7" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>';
+const GIFT =
+  '<svg class="i-gift" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 7.2C10.6 4.4 7.4 3.4 6.4 5.1c-.9 1.6 1.4 2.4 5.6 2.1Zm0 0c1.4-2.8 4.6-3.8 5.6-2.1.9 1.6-1.4 2.4-5.6 2.1Z" fill="#fcc419"/><rect x="3.5" y="11" width="17" height="10" rx="2" fill="#ff8787"/><rect x="2.5" y="7.5" width="19" height="4.5" rx="1.5" fill="#fa5252"/><rect x="10.5" y="7.5" width="3" height="13.5" fill="#fcc419"/></svg>';
 const TROPHY =
   '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h10v5a5 5 0 0 1-10 0Z" fill="currentColor"/><path d="M7 5H4v2a3 3 0 0 0 3 3m10-5h3v2a3 3 0 0 1-3 3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M10.5 12.5h3V17h-3Z" fill="currentColor"/><rect x="7" y="17" width="10" height="4" rx="1.2" fill="currentColor"/></svg>';
 
@@ -108,8 +108,10 @@ function renderAccount() {
     return;
   }
   const u = eco.state.user;
-  const dot = eco.canSpin() ? '<span class="dot" aria-label="Bonus verfügbar"></span>' : '';
-  const wheel = `<button type="button" class="icon-btn wheel-btn" data-open-wheel title="Täglicher Bonus" aria-label="Täglicher Bonus">${WHEEL}${dot}</button>`;
+  // Täglicher Bonus: Geschenk, das wackelt und einen Punkt trägt, solange der Bonus abholbar ist
+  const available = eco.canSpin();
+  const dot = available ? '<span class="dot" aria-label="Bonus verfügbar"></span>' : '';
+  const wheel = `<button type="button" class="icon-btn wheel-btn ${available ? 'has-bonus' : ''}" data-open-wheel title="Täglicher Bonus" aria-label="Täglicher Bonus">${GIFT}${dot}</button>`;
   if (!u) {
     box.innerHTML = `${wheel}<button type="button" class="btn btn--primary btn--sm" data-login>Mit Google anmelden</button>`;
     shownCoins = null;
