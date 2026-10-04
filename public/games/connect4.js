@@ -1,5 +1,6 @@
-// Vier gewinnt – gegen den Computer (drei Stärken) oder zu zweit an einem Gerät.
-// mount(container) gibt eine Cleanup-Funktion zurück.
+// Vier gewinnt – gegen den Computer (vier Stärken) oder zu zweit an einem Gerät.
+// mount(container) gibt eine Cleanup-Funktion zurück. Als Web Worker geladen, berechnet die
+// Datei nur Computerzüge (siehe ganz unten).
 
 const COLS = 7;
 const ROWS = 6;
@@ -18,12 +19,13 @@ const HOLE_R = 41;
 const DISC = 80;
 const DISC_INSET = (U - DISC) / 2;
 
+// time = höchste Rechenzeit pro Zug in ms; strong = Ultra-Suche (Merktabelle, Drohungen, Parität)
 const LEVELS = {
-  easy: { depth: 2, random: 0.35 },
-  medium: { depth: 4, random: 0.1 },
-  hard: { depth: 14, random: 0 },
+  easy: { depth: 2, random: 0.35, time: 600 },
+  medium: { depth: 4, random: 0.1, time: 600 },
+  hard: { depth: 14, random: 0, time: 600 },
+  ultra: { depth: CELLS, random: 0, time: 2000, strong: true },
 };
-const AI_TIME_LIMIT = 600; // ms Rechenzeit pro Zug (höchstens)
 const AI_MIN_THINK = 500; // ms, damit der Computer nicht „sofort“ zieht
 
 // ---------- Computer-Gegner (Negamax mit Alpha-Beta) ----------
@@ -142,6 +144,7 @@ export function chooseMove(cells, heights, moves, p, levelKey) {
   const level = LEVELS[levelKey] || LEVELS.medium;
   const legal = ORDER.filter((c) => heights[c] < ROWS);
   for (const c of legal) if (isWin(cells, c, heights[c], p)) return c;
+  if (level.strong) return strongMove(cells, heights, moves, p, level.time);
   if (Math.random() < level.random) return legal[Math.floor(Math.random() * legal.length)];
 
   const s = {
@@ -149,7 +152,7 @@ export function chooseMove(cells, heights, moves, p, levelKey) {
     heights: Int8Array.from(heights),
     moves,
     nodes: 0,
-    deadline: performance.now() + AI_TIME_LIMIT,
+    deadline: performance.now() + level.time,
   };
   let best = legal;
   for (let depth = 1; depth <= level.depth; depth++) {
@@ -182,6 +185,265 @@ export function chooseMove(cells, heights, moves, p, levelKey) {
     if (Math.abs(bestScore) >= WIN_SCORE) break; // Ausgang steht fest
   }
   return best[Math.floor(Math.random() * best.length)];
+}
+
+// ---------- Ultra: tiefere Suche mit Merktabelle, Drohungs-Logik und Paritäts-Bewertung ----------
+// Siege werden nach Zugnummer bewertet (früherer Sieg = mehr Punkte), damit gemerkte Ergebnisse
+// unabhängig von der Suchtiefe gültig bleiben.
+
+const SIDE = 2 * CELLS; // Zufallsschlüssel-Index für „Gelb ist am Zug“
+const Z1 = new Int32Array(2 * CELLS + 1); // zwei unabhängige Schlüssel: Tabellenplatz + Prüfung
+const Z2 = new Int32Array(2 * CELLS + 1);
+{
+  let x = 0x2545f491;
+  const next = () => {
+    x ^= x << 13;
+    x ^= x >>> 17;
+    x ^= x << 5;
+    return x | 0;
+  };
+  for (let i = 0; i < Z1.length; i++) {
+    Z1[i] = next();
+    Z2[i] = next();
+  }
+}
+
+const TT_SIZE = 1 << 20;
+const TT_MASK = TT_SIZE - 1;
+const EXACT = 1;
+const LOWER = 2;
+const UPPER = 3;
+let tt = null; // Merktabelle (~11 MB), wird erst bei „Ultra“ angelegt und bleibt zwischen den Zügen erhalten
+
+const WINDOWS_BY_CELL = Array.from({ length: CELLS }, () => []);
+WINDOWS.forEach((w) => w.forEach((i) => WINDOWS_BY_CELL[i].push(w)));
+// Puffer je Zugnummer, damit in der Suche keine Arrays angelegt werden
+const moveBuf = Array.from({ length: CELLS + 1 }, () => new Int8Array(COLS));
+const rankBuf = Array.from({ length: CELLS + 1 }, () => new Int32Array(COLS));
+
+// Bewertung aus Sicht von p. Drohungen (drei + ein freies Feld) zählen mehr, wenn das freie Feld auf
+// einer für den Spieler günstigen Reihe liegt: für den Anziehenden ungerade Reihen (1, 3, 5), für den
+// Nachziehenden gerade – so entscheidet sich Vier gewinnt oft im Endspiel.
+function evaluateStrong(cells, p, first) {
+  const o = 3 - p;
+  let score = 0;
+  for (let r = 0; r < ROWS; r++) {
+    const v = cells[3 * ROWS + r];
+    if (v === p) score += 4;
+    else if (v === o) score -= 4;
+  }
+  for (const w of WINDOWS) {
+    let mine = 0;
+    let theirs = 0;
+    let empty = -1;
+    for (let k = 0; k < 4; k++) {
+      const v = cells[w[k]];
+      if (v === p) mine++;
+      else if (v === o) theirs++;
+      else empty = w[k];
+    }
+    if (mine && theirs) continue;
+    if (mine === 3) score += (empty % ROWS) % 2 === (p === first ? 0 : 1) ? 14 : 6;
+    else if (mine === 2) score += 2;
+    else if (theirs === 3) score -= (empty % ROWS) % 2 === (o === first ? 0 : 1) ? 16 : 7;
+    else if (theirs === 2) score -= 2;
+  }
+  return score;
+}
+
+// Wie viele neue Dreier (mit freiem viertem Feld) entstehen durch einen Stein auf (c, r)?
+function threatsCreated(cells, c, r, p) {
+  let n = 0;
+  for (const w of WINDOWS_BY_CELL[c * ROWS + r]) {
+    let mine = 0;
+    let other = 0;
+    for (let k = 0; k < 4; k++) {
+      const v = cells[w[k]];
+      if (v === p) mine++;
+      else if (v) other++;
+    }
+    if (!other && mine === 2) n++;
+  }
+  return n;
+}
+
+function playStrong(s, c) {
+  const i = c * ROWS + s.heights[c];
+  const k = (s.p - 1) * CELLS + i;
+  s.cells[i] = s.p;
+  s.heights[c]++;
+  s.moves++;
+  s.h1 ^= Z1[k] ^ Z1[SIDE];
+  s.h2 ^= Z2[k] ^ Z2[SIDE];
+  s.p = 3 - s.p;
+  return i;
+}
+
+function undoStrong(s, c, i) {
+  s.p = 3 - s.p;
+  const k = (s.p - 1) * CELLS + i;
+  s.cells[i] = 0;
+  s.heights[c]--;
+  s.moves--;
+  s.h1 ^= Z1[k] ^ Z1[SIDE];
+  s.h2 ^= Z2[k] ^ Z2[SIDE];
+}
+
+function negaStrong(s, depth, alpha, beta) {
+  if ((++s.nodes & 4095) === 0 && performance.now() > s.deadline) throw TIMEOUT;
+  const { cells, heights } = s;
+  const p = s.p;
+  const o = 3 - p;
+  const n = s.moves;
+  if (n === CELLS) return 0;
+  // Eigener Sofortsieg (Zug n + 1)
+  for (let c = 0; c < COLS; c++) {
+    if (heights[c] < ROWS && isWin(cells, c, heights[c], p)) return WIN_SCORE + 41 - n;
+  }
+  // Drohungen des Gegners: eine muss geblockt werden, zwei gleichzeitig sind nicht zu halten
+  let forced = -1;
+  for (let c = 0; c < COLS; c++) {
+    if (heights[c] < ROWS && isWin(cells, c, heights[c], o)) {
+      if (forced >= 0) return -(WIN_SCORE + 40 - n);
+      forced = c;
+    }
+  }
+  if (depth <= 0) return evaluateStrong(cells, p, s.first);
+
+  const alphaOrig = alpha;
+  const slot = s.h1 & TT_MASK;
+  let ttMove = -1;
+  if (tt.flag[slot] && tt.key[slot] === s.h2) {
+    ttMove = tt.move[slot];
+    if (tt.depth[slot] >= depth) {
+      const v = tt.score[slot];
+      const f = tt.flag[slot];
+      if (f === EXACT) return v;
+      if (f === LOWER) alpha = Math.max(alpha, v);
+      else beta = Math.min(beta, v);
+      if (alpha >= beta) return v;
+    }
+  }
+
+  // Züge: Pflichtzug beim Blocken, sonst alle außer denen direkt unter einem Gewinnfeld des Gegners
+  const list = moveBuf[n];
+  const rank = rankBuf[n];
+  let count = 0;
+  if (forced >= 0) {
+    list[count++] = forced;
+  } else {
+    for (const c of ORDER) {
+      const h = heights[c];
+      if (h === ROWS || (h + 1 < ROWS && isWin(cells, c, h + 1, o))) continue;
+      list[count++] = c;
+    }
+    if (count === 0) return -(WIN_SCORE + 40 - n); // jeder Zug schenkt dem Gegner den Sieg
+  }
+  // Reihenfolge: gemerkter bester Zug, dann Züge mit neuen Drohungen, dann Mitte vor Rand
+  for (let k = 0; k < count; k++) {
+    const c = list[k];
+    rank[k] = c === ttMove ? 1000 : threatsCreated(cells, c, heights[c], p) * 10 + 3 - Math.abs(3 - c);
+  }
+  for (let a = 1; a < count; a++) {
+    const mv = list[a];
+    const rk = rank[a];
+    let b = a - 1;
+    while (b >= 0 && rank[b] < rk) {
+      list[b + 1] = list[b];
+      rank[b + 1] = rank[b];
+      b--;
+    }
+    list[b + 1] = mv;
+    rank[b + 1] = rk;
+  }
+
+  let best = -Infinity;
+  let bestMove = list[0];
+  for (let k = 0; k < count; k++) {
+    const c = list[k];
+    const i = playStrong(s, c);
+    const v = -negaStrong(s, depth - 1, -beta, -alpha);
+    undoStrong(s, c, i);
+    if (v > best) {
+      best = v;
+      bestMove = c;
+      if (v > alpha) alpha = v;
+      if (alpha >= beta) break;
+    }
+  }
+
+  tt.key[slot] = s.h2;
+  tt.score[slot] = best;
+  tt.depth[slot] = depth;
+  tt.move[slot] = bestMove;
+  tt.flag[slot] = best <= alphaOrig ? UPPER : best >= beta ? LOWER : EXACT;
+  return best;
+}
+
+function strongMove(cells, heights, moves, p, timeLimit) {
+  if (!tt) {
+    tt = {
+      key: new Int32Array(TT_SIZE),
+      score: new Int32Array(TT_SIZE),
+      depth: new Int8Array(TT_SIZE),
+      flag: new Uint8Array(TT_SIZE),
+      move: new Int8Array(TT_SIZE),
+    };
+  }
+  const s = {
+    cells: Int8Array.from(cells),
+    heights: Int8Array.from(heights),
+    moves,
+    p,
+    first: 0,
+    h1: 0,
+    h2: 0,
+    nodes: 0,
+    deadline: performance.now() + timeLimit,
+  };
+  let reds = 0;
+  let yellows = 0;
+  for (let i = 0; i < CELLS; i++) {
+    const v = s.cells[i];
+    if (!v) continue;
+    if (v === RED) reds++;
+    else yellows++;
+    const k = (v - 1) * CELLS + i;
+    s.h1 ^= Z1[k];
+    s.h2 ^= Z2[k];
+  }
+  if (p === YELLOW) {
+    s.h1 ^= Z1[SIDE];
+    s.h2 ^= Z2[SIDE];
+  }
+  s.first = reds === yellows ? p : 3 - p; // wer die Partie begonnen hat
+
+  let order = ORDER.filter((c) => heights[c] < ROWS);
+  if (order.length === 1) return order[0];
+  let best = order[0];
+  for (let depth = 1; depth <= CELLS - moves; depth++) {
+    let alpha = -Infinity;
+    let bestHere = order[0];
+    try {
+      for (const c of order) {
+        const i = playStrong(s, c);
+        const v = -negaStrong(s, depth - 1, -Infinity, -alpha);
+        undoStrong(s, c, i);
+        if (v > alpha) {
+          alpha = v;
+          bestHere = c;
+        }
+      }
+    } catch (err) {
+      // Zeit abgelaufen: bester Zug der letzten vollständigen Tiefe (s wird verworfen)
+      if (err === TIMEOUT) break;
+      throw err;
+    }
+    best = bestHere;
+    order = [best, ...order.filter((c) => c !== best)];
+    if (Math.abs(alpha) >= WIN_SCORE) break; // Sieg oder Niederlage steht fest
+  }
+  return best;
 }
 
 // ---------- Darstellung ----------
@@ -244,10 +506,11 @@ export function mount(container) {
         </div>
         <div class="gp-group" data-level-group>
           <span class="gp-label">Stärke</span>
-          <div class="gp-seg" role="group" aria-label="Stärke">
+          <div class="gp-seg gp-seg--tight" role="group" aria-label="Stärke">
             <button type="button" data-level="easy">Leicht</button>
             <button type="button" data-level="medium">Mittel</button>
             <button type="button" data-level="hard">Schwer</button>
+            <button type="button" data-level="ultra">Ultra</button>
           </div>
         </div>
         <button type="button" class="btn btn--primary" data-new>Neues Spiel</button>
@@ -422,14 +685,47 @@ export function mount(container) {
     banner.hidden = false;
   }
 
+  // Computerzug im Hintergrund (Web Worker) berechnen, damit die Seite flüssig bleibt.
+  // Klappt das nicht (z. B. alter Browser), wird direkt gerechnet.
+  let worker = null;
+  let workerFailed = false;
+
+  function stopWorker() {
+    worker?.terminate();
+    worker = null;
+  }
+
+  function compute(job) {
+    const direct = () => chooseMove(job.cells, job.heights, job.moves, job.p, job.level);
+    if (!workerFailed) {
+      try {
+        worker ||= new Worker(import.meta.url, { type: 'module' });
+        const w = worker;
+        return new Promise((resolve) => {
+          w.onmessage = (e) => resolve(e.data);
+          w.onerror = (e) => {
+            e.preventDefault();
+            workerFailed = true;
+            stopWorker();
+            resolve(direct());
+          };
+          w.postMessage(job);
+        });
+      } catch {
+        workerFailed = true;
+      }
+    }
+    return new Promise((resolve) => setTimeout(() => resolve(direct()), 30));
+  }
+
   function computerMove() {
     busy = true;
     thinking = true;
     render();
     const started = performance.now();
-    // Kurz warten, damit „denkt …“ gezeichnet wird, bevor gerechnet wird
-    schedule(() => {
-      const col = chooseMove(cells, heights, moves, YELLOW, settings.level);
+    const token = round;
+    compute({ cells, heights, moves, p: YELLOW, level: settings.level }).then((col) => {
+      if (token !== round) return;
       const rest = Math.max(0, AI_MIN_THINK - (performance.now() - started));
       schedule(() => {
         thinking = false;
@@ -438,7 +734,7 @@ export function mount(container) {
         preview.classList.remove('is-hidden'); // kurz zeigen, wohin der Computer wirft
         schedule(() => drop(col), 220);
       }, rest);
-    }, 30);
+    });
   }
 
   function humanDrop(col) {
@@ -461,6 +757,7 @@ export function mount(container) {
   function newGame(resetScores = false) {
     round++;
     clearTimers();
+    if (thinking) stopWorker(); // laufende Berechnung abbrechen statt abzuwarten
     cells.fill(0);
     heights.fill(0);
     moves = 0;
@@ -569,6 +866,15 @@ export function mount(container) {
   return () => {
     round++;
     clearTimers();
+    stopWorker();
     window.removeEventListener('keydown', onKey);
+  };
+}
+
+// Als Web Worker geladen: nur Computerzüge berechnen
+if (typeof WorkerGlobalScope !== 'undefined' && self instanceof WorkerGlobalScope) {
+  self.onmessage = (e) => {
+    const { cells, heights, moves, p, level } = e.data;
+    self.postMessage(chooseMove(cells, heights, moves, p, level));
   };
 }

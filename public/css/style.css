@@ -609,6 +609,8 @@ section h2 { font-size: 1.3rem; font-weight: 900; margin: 32px 0 14px; }
   font-weight: 800;
   cursor: pointer;
 }
+.gp-seg button { min-width: 0; white-space: nowrap; }
+.gp-seg--tight button { padding-inline: 2px; font-size: 0.8rem; }
 .gp-seg button:hover { background: rgba(255, 255, 255, 0.1); }
 .gp-seg button.is-active { background: #fff; color: #183153; }
 .gp-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
