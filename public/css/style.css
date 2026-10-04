@@ -136,6 +136,7 @@ main {
   margin: 48px 0 24px;
 }
 .feature {
+  --foot: color-mix(in srgb, var(--bg) 65%, var(--edge));
   position: relative;
   display: flex;
   flex-direction: column;
@@ -151,7 +152,12 @@ main {
   overflow: hidden;
   border-radius: var(--radius) var(--radius) 0 0;
 }
-.feature-body { padding: 24px 32px 32px; }
+.feature-body {
+  flex: 1;
+  padding: 24px 32px 32px;
+  border-radius: 0 0 var(--radius) var(--radius);
+  background: var(--foot);
+}
 .feature h3 { margin: 0; font-size: 1.9rem; font-weight: 900; }
 .feature p { margin: 10px 0 22px; font-size: 1.1rem; opacity: 0.85; }
 .feature-link {
@@ -198,6 +204,7 @@ section h2 { font-size: 1.6rem; font-weight: 900; margin: 40px 0 20px; }
   gap: 32px;
 }
 .tile {
+  --foot: color-mix(in srgb, var(--bg) 65%, var(--edge));
   position: relative;
   display: flex;
   flex-direction: column;
@@ -214,7 +221,9 @@ section h2 { font-size: 1.6rem; font-weight: 900; margin: 40px 0 20px; }
 .tile-foot {
   display: flex;
   flex-direction: column;
+  flex: 1;
   padding: 14px 20px 16px;
+  background: var(--foot);
 }
 .tile-name { font-size: 1.2rem; font-weight: 900; }
 .tile-cats { font-size: 0.85rem; font-weight: 700; opacity: 0.75; }
