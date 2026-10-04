@@ -69,8 +69,12 @@ export const GAMES = [
     id: 'blocks',
     title: 'Blockfall',
     categories: ['Klassiker', 'Puzzle'],
+    teaser: 'Dreh und schieb die fallenden Blöcke – volle Reihen verschwinden.',
+    description: 'Fallende Blöcke aus vier Feldern: Schieb und dreh sie so, dass volle Reihen entstehen – die verschwinden und bringen Punkte. Vier Reihen auf einmal geben am meisten. Alle 10 Reihen steigt das Level und alles wird schneller.',
+    controls: '← → schieben, ↑ oder X drehen, Z andersherum, ↓ schneller fallen, Leertaste sofort fallen lassen, C oder Shift halten, P pausiert. Auf dem Handy gibt es Tasten unter dem Spielfeld.',
     theme: { bg: '#9775fa', edge: '#6741d9', ink: '#ffffff' },
-    available: false,
+    badge: 'NEU',
+    available: true,
   },
   {
     id: 'bricks',

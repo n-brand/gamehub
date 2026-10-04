@@ -602,6 +602,9 @@ export function mount(container, api) {
   $('[data-new]').addEventListener('click', newGame);
   pauseBtn.addEventListener('click', togglePause);
 
+  // Nach Klick auf einen Button den Fokus lösen, damit die Leertaste wieder das Spiel steuert
+  container.addEventListener('click', (e) => e.target.closest('button')?.blur());
+
   function isTyping(t) {
     return t instanceof HTMLElement && (t.closest('input, textarea, select') || t.isContentEditable);
   }

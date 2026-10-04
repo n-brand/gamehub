@@ -535,6 +535,9 @@ export function mount(container) {
   $('[data-new]').addEventListener('click', () => newGame());
   $('[data-again]').addEventListener('click', () => newGame());
 
+  // Nach Klick auf einen Button den Fokus lösen, damit die Leertaste wieder das Spiel steuert
+  container.addEventListener('click', (e) => e.target.closest('button')?.blur());
+
   function onKey(e) {
     const t = e.target;
     if (e.altKey || e.ctrlKey || e.metaKey) return;
