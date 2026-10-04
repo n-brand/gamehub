@@ -68,6 +68,15 @@ const CATALOG = {
 const today = (offset = 0) =>
   new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Berlin' }).format(new Date(Date.now() + offset * 864e5));
 
+const freshDb = () => ({
+  loggedIn: false,
+  profile: { coins: 0, diamonds: 0, spin_streak: 0, last_spin: null },
+  game_stats: {},
+  inventory: [],
+  equipped: {},
+  user_achievements: [],
+});
+
 function load() {
   try {
     const db = JSON.parse(localStorage.getItem(KEY));
@@ -75,17 +84,11 @@ function load() {
   } catch {
     // kaputte oder fehlende Daten → neu anfangen
   }
-  return {
-    loggedIn: false,
-    profile: { coins: 0, diamonds: 0, spin_streak: 0, last_spin: null },
-    game_stats: {},
-    inventory: [],
-    equipped: {},
-    user_achievements: [],
-  };
+  return freshDb();
 }
 
-export function createDemoClient() {
+// ownAll: angemeldet starten und alles besitzen (?demo=alles)
+export function createDemoClient({ ownAll = false } = {}) {
   const db = load();
   const authListeners = new Set();
   const save = () => {
@@ -95,6 +98,16 @@ export function createDemoClient() {
       // Speicher nicht verfügbar – Demo gilt nur bis zum Neuladen
     }
   };
+
+  // Alle Designs besitzen und reichlich Guthaben haben
+  const unlockAll = () => {
+    db.loggedIn = true;
+    db.inventory = CATALOG.shop_items.filter((i) => i.price_coins || i.price_diamonds).map((i) => i.id);
+    db.profile.coins = Math.max(db.profile.coins, 99999);
+    db.profile.diamonds = Math.max(db.profile.diamonds, 999);
+    save();
+  };
+  if (ownAll) unlockAll();
 
   const tableRows = (table) => {
     if (CATALOG[table]) return CATALOG[table];
@@ -253,6 +266,17 @@ export function createDemoClient() {
       if (!free && !db.inventory.includes(p_item)) return fail('Artikel nicht im Besitz');
       db.equipped[item.game] = p_item;
       return { data: { game: item.game, item: p_item }, error: null };
+    },
+
+    // Nur im Demo-Modus: alles freischalten bzw. von vorn beginnen (angemeldet bleiben)
+    demo_unlock_all() {
+      unlockAll();
+      return { data: true, error: null };
+    },
+
+    demo_reset() {
+      Object.assign(db, freshDb(), { loggedIn: true });
+      return { data: true, error: null };
     },
   };
 

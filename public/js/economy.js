@@ -11,8 +11,10 @@ const SUPABASE_JS = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 const AFTER_LOGIN_KEY = 'gamehub-after-login';
 const GAMES = ['snake', '2048', 'connect4', 'pairs', 'minesweeper', 'bricks', 'blocks'];
 
-// Demo-Modus zum Ausprobieren ohne Supabase: ?demo=1 an die Adresse hängen (Daten nur im Browser)
-const demo = !SUPABASE_URL && new URLSearchParams(location.search).has('demo');
+// Demo-Modus zum Ausprobieren ohne Supabase (Daten nur im Browser): ?demo=1 an die Adresse hängen,
+// ?demo=alles startet angemeldet mit allen Designs und reichlich Guthaben.
+const demoParam = new URLSearchParams(location.search).get('demo');
+const demo = !SUPABASE_URL && demoParam !== null;
 export const enabled = demo || Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
 
 const emptyProfile = () => ({ coins: 0, diamonds: 0, spin_streak: 0, last_spin: null });
@@ -55,7 +57,7 @@ export async function init() {
   try {
     if (demo) {
       const { createDemoClient } = await import('./demo-backend.js');
-      client = createDemoClient();
+      client = createDemoClient({ ownAll: demoParam === 'alles' || demoParam === 'all' });
     } else {
       const { createClient } = await import(SUPABASE_JS);
       client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
@@ -299,6 +301,19 @@ export async function buy(itemId) {
   applyBalance(data);
   state.inventory.add(itemId);
   emit({ type: 'state' });
+}
+
+// Nur im Demo-Modus: alles freischalten bzw. die Demo-Daten zurücksetzen
+export async function demoUnlockAll() {
+  if (!demo || !client) return;
+  await client.rpc('demo_unlock_all');
+  await refresh();
+}
+
+export async function demoReset() {
+  if (!demo || !client) return;
+  await client.rpc('demo_reset');
+  await refresh();
 }
 
 export async function equip(itemId) {

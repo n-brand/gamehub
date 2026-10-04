@@ -131,7 +131,7 @@ function renderAccount() {
       <button type="button" class="avatar" data-user-menu aria-haspopup="true" aria-expanded="false" title="${esc(u.name)}">${avatar}</button>
       <div class="menu" hidden>
         <span class="menu-name">${esc(u.name)}</span>
-        ${eco.state.demo ? '<span class="menu-note">Demo-Modus: Daten nur in diesem Browser</span>' : ''}
+        ${eco.state.demo ? '<span class="menu-note">Demo-Modus: Daten nur in diesem Browser</span><button type="button" data-demo-all>Alles freischalten</button><button type="button" data-demo-reset>Demo zurücksetzen</button>' : ''}
         <a href="#/shop">Shop</a>
         <a href="#/erfolge">Erfolge</a>
         <button type="button" data-logout>Abmelden</button>
@@ -186,6 +186,10 @@ export function initEconomyUI() {
       eco.signIn();
     } else if (t.closest('[data-logout]')) {
       eco.signOut();
+    } else if (t.closest('[data-demo-all]')) {
+      eco.demoUnlockAll().then(() => toast({ icon: DIAMOND, title: 'Alles freigeschaltet', text: 'Alle Designs und reichlich Guthaben.' }));
+    } else if (t.closest('[data-demo-reset]')) {
+      eco.demoReset().then(() => toast({ title: 'Demo zurückgesetzt' }));
     } else if (t.closest('[data-open-wheel]')) {
       openWheel();
     } else if (t.closest('[data-user-menu]')) {
@@ -205,7 +209,9 @@ export function initEconomyUI() {
 
 // ---------- Glücksrad ----------
 
-const WHEEL_COLORS = ['#ffd43b', '#74c0fc', '#ff8787', '#8ce99a', '#b197fc', '#ffa94d', '#f783ac', '#183153'];
+// Letztes Feld = Jackpot: kräftiges Violett, damit es sich vom dunklen Rand abhebt
+const WHEEL_COLORS = ['#ffd43b', '#74c0fc', '#ff8787', '#8ce99a', '#b197fc', '#ffa94d', '#f783ac', '#6741d9'];
+const JACKPOT_COLOR = '#6741d9';
 let wheelRotation = 0;
 
 function wheelSvg(segments) {
@@ -219,10 +225,10 @@ function wheelSvg(segments) {
     const a0 = rad(i * step);
     const a1 = rad((i + 1) * step);
     const color = WHEEL_COLORS[i % WHEEL_COLORS.length];
-    slices += `<path d="M${C} ${C}L${C + R * Math.cos(a0)} ${C + R * Math.sin(a0)}A${R} ${R} 0 0 1 ${C + R * Math.cos(a1)} ${C + R * Math.sin(a1)}Z" fill="${color}"/>`;
+    slices += `<path d="M${C} ${C}L${C + R * Math.cos(a0)} ${C + R * Math.sin(a0)}A${R} ${R} 0 0 1 ${C + R * Math.cos(a1)} ${C + R * Math.sin(a1)}Z" fill="${color}" stroke="#fff" stroke-width="2.5" stroke-linejoin="round"/>`;
     const mid = i * step + step / 2;
     const am = rad(mid);
-    const dark = color === '#183153';
+    const dark = color === JACKPOT_COLOR;
     const ink = dark ? '#ffd43b' : '#183153';
     const icon = s.diamonds
       ? `<path d="M-7 -3h14l4 5-11 13-11-13Z" transform="translate(0 6) scale(.8)" fill="#66d9e8" stroke="#15aabf" stroke-width="1.5"/>`
@@ -236,7 +242,7 @@ function wheelSvg(segments) {
     ticks += `<circle cx="${C + (R + 4) * Math.cos(a)}" cy="${C + (R + 4) * Math.sin(a)}" r="4" fill="#fff"/>`;
   }
   return `<svg viewBox="0 0 320 320" aria-hidden="true">
-    <circle cx="${C}" cy="${C}" r="${R + 10}" fill="#183153"/>
+    <circle cx="${C}" cy="${C}" r="${R + 10}" fill="#183153" stroke="#fff" stroke-opacity=".18" stroke-width="2"/>
     ${slices}${ticks}${labels}
     <circle cx="${C}" cy="${C}" r="26" fill="#fff"/><circle cx="${C}" cy="${C}" r="18" fill="#ffd43b"/>
   </svg>`;

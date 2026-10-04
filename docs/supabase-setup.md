@@ -4,6 +4,8 @@ Dauer: etwa 20–30 Minuten. Alles läuft im kostenlosen Tarif.
 
 > **Vorher ausprobieren:** Mit `?demo=1` an der Adresse (z. B. `http://localhost:4177/?demo=1`) läuft
 > alles mit einem Demo-Backend im Browser – ohne Supabase und ohne echten Login.
+> Mit `?demo=alles` startet die Demo angemeldet, mit allen Designs und reichlich Coins und Diamanten.
+> Im Profil-Menü der Demo gibt es außerdem „Alles freischalten“ und „Demo zurücksetzen“.
 
 ## 1. Supabase-Projekt anlegen
 
