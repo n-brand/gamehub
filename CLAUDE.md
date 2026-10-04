@@ -29,9 +29,9 @@
 - Lokal starten: `npm run dev` (bzw. `node server.js`) → http://localhost:4177
 - Online: https://n-brand.github.io/gamehub/ – GitHub Actions (`.github/workflows/pages.yml`) veröffentlicht `public/` bei jedem Push auf `main`. Pfade in `public/` müssen relativ sein (Seite läuft unter `/gamehub/`).
 - Design im Font-Awesome-Stil umgesetzt (siehe Design-Grundsatz).
-- Übersicht: Hero, 3 große Feature-Karten, Kategorie-Filter, Suche, „Zuletzt gespielt“, Favoriten, alle Spiele als illustrierte Kacheln. Favoriten lassen sich direkt auf Kacheln/Feature-Karten per Stern (oben links, erscheint beim Hovern; markierte immer sichtbar) setzen und entfernen. Geplante Spiele erscheinen als „Bald“-Kacheln (2048, Vier gewinnt, Memory, Minesweeper, Tetris, Breakout).
+- Übersicht: Hero, 3 große Feature-Karten, Kategorie-Filter, Suche, „Zuletzt gespielt“, Favoriten, alle Spiele als illustrierte Kacheln. Favoriten lassen sich direkt auf Kacheln/Feature-Karten per Stern (oben links, erscheint beim Hovern; markierte immer sichtbar) setzen und entfernen. Geplante Spiele erscheinen als „Bald“-Kacheln (Vier gewinnt, Memory, Minesweeper, Tetris, Breakout).
 - Spieleseite: Spiel in farbigem Rahmen (Spielfarbe), Vollbild, Favorit, Beschreibung/Steuerung, ähnliche Spiele.
-- Fertige Spiele: **Snake** im Google-Snake-Stil (17×15 Feld, flüssige Bewegung, Augen, Apfel, Tastatur/Wischen/Touch-Buttons, Pause, lokaler Highscore).
+- Fertige Spiele: **2048** (klassische Regeln, gleitende Kacheln mit Verschmelz-Animation, Punkte/Rekord, Sieg bei 2048 mit Weiterspielen, Spielstand wird in `localStorage` unter `gamehub-2048-state` gespeichert), **Snake** im Google-Snake-Stil (17×15 Feld, flüssige Bewegung, Augen, Apfel, Tastatur/Wischen/Touch-Buttons, Pause, lokaler Highscore).
 - Daten (zuletzt gespielt, Favoriten, Highscores) nur lokal im Browser (`localStorage`), noch kein Backend.
 - Nächste Schritte: weitere Spiele (selbst bauen oder Open-Source übernehmen, siehe unten), später Backend mit **Supabase** für Accounts/Bestenlisten.
 

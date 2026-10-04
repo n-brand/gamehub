@@ -24,9 +24,12 @@ export const GAMES = [
     title: '2048',
     categories: ['Puzzle'],
     teaser: 'Schiebe gleiche Zahlen zusammen, bis du die 2048 erreichst.',
+    description: 'Schiebe alle Kacheln in eine Richtung. Zwei gleiche Zahlen verschmelzen zu ihrer Summe. Schaffst du die 2048-Kachel, bevor das Feld voll ist?',
+    controls: 'Pfeiltasten oder WASD zum Schieben. Auf dem Handy: wischen. Dein Spielstand wird automatisch gespeichert.',
     theme: { bg: '#ffd43b', edge: '#f08c00', ink: '#5c3c00' },
+    badge: 'NEU',
     featured: true,
-    available: false,
+    available: true,
   },
   {
     id: 'connect4',
