@@ -1,9 +1,8 @@
-// Oberfläche für Coins, Diamanten, Glücksrad, Erfolge und Shop:
-// Kopfzeile (Kontostand, Glücksrad, Login), Einblendungen, Glücksrad-Fenster und die Seiten #/shop und #/erfolge.
+// Oberfläche für Coins, Diamanten, Glücksrad und Erfolge: Kopfzeile (Kontostand, Glücksrad, Login),
+// Einblendungen, Fenster, Glücksrad und die Erfolge-Liste. Shop und Inventar stehen in shop.js und inventory.js.
 import * as eco from './economy.js';
 import { GAMES } from './games.js';
-import { drawPreview } from './designs.js';
-import { dropdown } from './ui.js';
+import { esc, fmt, fmtShort } from './ui.js';
 
 // ---------- Symbole ----------
 
@@ -54,8 +53,6 @@ const GIFT =
 export const TROPHY =
   '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h10v5a5 5 0 0 1-10 0Z" fill="currentColor"/><path d="M7 5H4v2a3 3 0 0 0 3 3m10-5h3v2a3 3 0 0 1-3 3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M10.5 12.5h3V17h-3Z" fill="currentColor"/><rect x="7" y="17" width="10" height="4" rx="1.2" fill="currentColor"/></svg>';
 
-const fmt = (n) => new Intl.NumberFormat('de-DE').format(n || 0);
-const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
 function rewardHtml({ coins = 0, diamonds = 0 }) {
@@ -65,7 +62,7 @@ function rewardHtml({ coins = 0, diamonds = 0 }) {
   return parts.join(' ');
 }
 
-function rewardText({ coins = 0, diamonds = 0 }) {
+export function rewardText({ coins = 0, diamonds = 0 }) {
   const parts = [];
   if (coins) parts.push(`+${fmt(coins)} Coins`);
   if (diamonds) parts.push(`+${fmt(diamonds)} ${diamonds === 1 ? 'Diamant' : 'Diamanten'}`);
@@ -74,13 +71,26 @@ function rewardText({ coins = 0, diamonds = 0 }) {
 
 // ---------- Einblendungen (unten rechts) ----------
 
-export function toast({ icon = '', title, text = '', kind = '', action = null, duration = 3600 }) {
+const MAX_TOASTS = 3;
+
+// key: gleichartige Einblendungen (z. B. 'equip') ersetzen sich, statt sich zu stapeln
+export function toast({ icon = '', title, text = '', kind = '', action = null, duration = 3600, key = '' }) {
   const box = document.getElementById('toasts');
   if (!box) return;
+  const old = key && box.querySelector(`.toast[data-key="${key}"]:not(.is-out)`);
+  if (old) {
+    clearTimeout(old._timer);
+    old.remove();
+  }
+  // Nie mehr als drei auf einmal – die älteste macht Platz
+  const shown = box.querySelectorAll('.toast:not(.is-out)');
+  if (shown.length >= MAX_TOASTS) shown[0].remove();
   const el = document.createElement('div');
   el.className = `toast ${kind}`;
+  if (key) el.dataset.key = key;
   el.innerHTML = `${icon ? `<span class="toast-icon">${icon}</span>` : ''}<span class="toast-text"><b>${esc(title)}</b>${text ? `<small>${esc(text)}</small>` : ''}</span>`;
   const close = () => {
+    clearTimeout(el._timer);
     el.classList.add('is-out');
     setTimeout(() => el.remove(), 300);
   };
@@ -96,19 +106,24 @@ export function toast({ icon = '', title, text = '', kind = '', action = null, d
     el.append(b);
   }
   box.append(el);
-  setTimeout(close, duration);
+  el._timer = setTimeout(close, duration);
 }
 
-// ---------- Fenster (Glücksrad, Kaufen bestätigen) ----------
+// ---------- Fenster (Glücksrad, Shop, Anmelden) ----------
 
-function openModal(html, { className = '' } = {}) {
+// Öffnet ein Fenster; schließt mit Esc, Klick daneben oder [data-close]. onClose läuft genau einmal.
+export function openModal(html, { className = '', onClose = null } = {}) {
   const backdrop = document.createElement('div');
   backdrop.className = 'modal-backdrop';
   backdrop.innerHTML = `<div class="modal ${className}" role="dialog" aria-modal="true"><button type="button" class="modal-close" data-close aria-label="Schließen"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 6.5l11 11m0-11-11 11" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg></button>${html}</div>`;
+  let closed = false;
   const close = () => {
+    if (closed) return;
+    closed = true;
     document.removeEventListener('keydown', onKey);
     backdrop.classList.add('is-out');
     setTimeout(() => backdrop.remove(), 200);
+    onClose?.();
   };
   const onKey = (e) => {
     if (e.key === 'Escape') close();
@@ -121,7 +136,7 @@ function openModal(html, { className = '' } = {}) {
   return { el: backdrop.querySelector('.modal'), close };
 }
 
-function loginPrompt(text) {
+export function loginPrompt(text) {
   const { el, close } = openModal(`
     <h2>Anmelden</h2>
     <p class="modal-text">${esc(text)}</p>
@@ -142,6 +157,10 @@ function renderAccount() {
   if (!box) return;
   box.hidden = false;
   nav?.querySelectorAll('[data-eco]').forEach((a) => (a.hidden = false));
+  // Gelber Punkt am Inventar (und auf dem Handy am ☰-Knopf), solange Belohnungen abholbar sind
+  const pending = eco.pendingCount() > 0;
+  nav?.querySelector('a[href="#/inventar"]')?.classList.toggle('has-dot', pending);
+  document.getElementById('menu-toggle')?.classList.toggle('has-dot', pending);
   if (!eco.state.ready) {
     box.innerHTML = '';
     return;
@@ -162,17 +181,15 @@ function renderAccount() {
     : `<span>${esc(u.name.slice(0, 1).toUpperCase())}</span>`;
   box.innerHTML = `
     ${wheel}
-    <a class="wallet" href="#/shop" title="Dein Guthaben – zum Shop">
-      <span class="wallet-item">${COIN}<b>${fmt(coins)}</b></span>
-      <span class="wallet-item">${DIAMOND}<b>${fmt(diamonds)}</b></span>
+    <a class="wallet" href="#/shop" title="Dein Guthaben: ${fmt(coins)} Coins, ${fmt(diamonds)} ${diamonds === 1 ? 'Diamant' : 'Diamanten'} – zum Shop" aria-label="Guthaben: ${fmt(coins)} Coins, ${fmt(diamonds)} Diamanten – zum Shop">
+      <span class="wallet-item">${COIN}<b>${fmtShort(coins)}</b></span>
+      <span class="wallet-item">${DIAMOND}<b>${fmtShort(diamonds)}</b></span>
     </a>
     <div class="user-menu">
       <button type="button" class="avatar" data-user-menu aria-haspopup="true" aria-expanded="false" title="${esc(u.name)}">${avatar}</button>
       <div class="menu" hidden>
-        <span class="menu-name">${esc(u.name)}</span>
+        <a class="menu-name" href="#/inventar" title="Zum Inventar">${esc(u.name)}</a>
         ${eco.state.demo ? '<span class="menu-note">Demo-Modus: Daten nur in diesem Browser</span><button type="button" data-demo-all>Alles freischalten</button><button type="button" data-demo-reset>Demo zurücksetzen</button>' : ''}
-        <a href="#/shop">Shop</a>
-        <a href="#/erfolge">Erfolge</a>
         <button type="button" data-logout>Abmelden</button>
       </div>
     </div>`;
@@ -199,7 +216,15 @@ export function initEconomyUI() {
     } else if (e.type === 'reward' && e.coins > 0) {
       toast({ icon: COIN, title: `+${fmt(e.coins)} Coins`, text: e.record ? 'Neuer Rekord – 10 Coins extra!' : '' });
     } else if (e.type === 'achievement') {
-      toast({ icon: TROPHY, kind: 'toast--gold', title: `Erfolg: ${e.name}`, text: rewardText(e), duration: 5500 });
+      // Belohnung wartet im Inventar (gelber Punkt bleibt, bis sie abgeholt ist)
+      toast({
+        icon: TROPHY,
+        kind: 'toast--gold',
+        title: `Erfolg: ${e.name}`,
+        text: e.pending ? `${rewardText(e)} – im Inventar abholen` : rewardText(e),
+        action: e.pending ? { label: 'Zum Inventar', run: () => (location.hash = '#/erfolge') } : null,
+        duration: 5500,
+      });
     } else if (e.type === 'guest' && !guestHinted) {
       guestHinted = true;
       try {
@@ -409,192 +434,53 @@ export function openWheel() {
   });
 }
 
-// ---------- Seite: Shop ----------
+// ---------- Erfolge (Abschnitt der Seite #/inventar) ----------
 
-// Vorschauen mit Bewegung (Farbverlauf, Funkeln, Leuchten, wippende Würfel)
-const ANIMATED = /rainbow|gold|neon|cube-/;
-
-function priceHtml(item) {
-  if (eco.isFree(item)) return '<span class="price">Gratis</span>';
-  return `<span class="price">${item.price_diamonds ? DIAMOND : COIN}${fmt(item.price_diamonds || item.price_coins)}</span>`;
+// Zahl der freigeschalteten Erfolge und alle Erfolge nach Spiel gruppiert (Überschriften als h3)
+export function achievementSummary() {
+  const list = eco.state.catalog.achievements;
+  return { done: list.filter((a) => eco.state.unlocked.has(a.id)).length, total: list.length };
 }
 
-function shopButton(item) {
-  const { user, profile } = eco.state;
-  if (!user) return '<button type="button" class="btn" data-login>Anmelden zum Kaufen</button>';
-  const equipped = eco.getEquipped(item.slot) === item.id;
-  if (equipped) return '<button type="button" class="btn is-equipped" disabled>Ausgerüstet ✓</button>';
-  if (eco.owns(item.id)) return `<button type="button" class="btn" data-equip="${item.id}">Ausrüsten</button>`;
-  const missingCoins = item.price_coins - profile.coins;
-  const missingDiamonds = item.price_diamonds - profile.diamonds;
-  if (missingCoins > 0 || missingDiamonds > 0) {
-    const missing = missingDiamonds > 0 ? `${fmt(missingDiamonds)} ${missingDiamonds === 1 ? 'Diamant' : 'Diamanten'}` : `${fmt(missingCoins)} Coins`;
-    return `<button type="button" class="btn" disabled>Kaufen</button><small class="shop-note">Dir fehlen noch ${missing}.</small>`;
-  }
-  return `<button type="button" class="btn btn--primary" data-buy="${item.id}">Kaufen</button>`;
-}
-
-function confirmBuy(item) {
-  const { profile } = eco.state;
-  const diamonds = item.price_diamonds > 0;
-  const price = diamonds ? item.price_diamonds : item.price_coins;
-  const unit = diamonds ? (price === 1 ? 'Diamant' : 'Diamanten') : 'Coins';
-  const rest = (diamonds ? profile.diamonds : profile.coins) - price;
-  const { el, close } = openModal(`
-    <h2>${esc(item.name)} kaufen?</h2>
-    <p class="modal-text">Kostet ${fmt(price)} ${unit}. Danach hast du noch ${fmt(rest)} ${unit}.</p>
-    <div class="modal-actions">
-      <button type="button" class="btn" data-close>Abbrechen</button>
-      <button type="button" class="btn btn--primary" data-confirm>Kaufen</button>
-    </div>`);
-  el.querySelector('[data-confirm]').addEventListener('click', async (e) => {
-    e.currentTarget.disabled = true;
-    try {
-      await eco.buy(item.id);
-      await eco.equip(item.id);
-      toast({ icon: COIN, title: `${item.name} gekauft`, text: 'Ist jetzt ausgerüstet.' });
-    } catch (err) {
-      toast({ kind: 'toast--error', title: err?.message || 'Kauf fehlgeschlagen.' });
-    }
-    close();
-  });
-}
-
-export function renderShop(container) {
-  let activeGame = 'snake';
-  let raf = 0;
-
-  const render = () => {
-    const games = [...new Set(eco.state.catalog.items.map((i) => i.game))];
-    if (games.length && !games.includes(activeGame)) activeGame = games[0];
-    const items = eco.state.catalog.items.filter((i) => i.game === activeGame);
-    const gameTitle = (id) => GAMES.find((g) => g.id === id)?.title || id;
-    // Artikel nach Slot gruppieren (z. B. Würfelsprung: Themes und Würfel), Überschrift aus games.js
-    const slotMeta = GAMES.find((g) => g.id === activeGame)?.slots || [];
-    const groups = [...new Set(items.map((i) => i.slot))].map((slot) => ({
-      label: slotMeta.find((s) => s.id === slot)?.label || '',
-      items: items.filter((i) => i.slot === slot),
-    }));
-    const card = (item) => `
-            <article class="shop-card ${eco.getEquipped(item.slot) === item.id && eco.state.user ? 'is-equipped' : ''}">
-              <canvas class="shop-preview" width="320" height="200" data-design="${item.id}"></canvas>
-              <div class="shop-body">
-                <div class="shop-title"><h3>${esc(item.name)}</h3>${priceHtml(item)}</div>
-                ${shopButton(item)}
-              </div>
-            </article>`;
-    container.innerHTML = `
-      <section class="page">
-        <div class="page-head">
-          <h1>Shop</h1>
-          <p>Designs für deine Spiele – bezahlt mit Coins oder Diamanten.</p>
-        </div>
-        ${eco.state.user ? '' : '<div class="page-cta">Melde dich an, um Coins zu sammeln und Designs zu kaufen. <button type="button" class="btn btn--primary btn--sm" data-login>Mit Google anmelden</button></div>'}
-        ${games.length > 1 ? `<nav class="chips chips--collapse">${games.map((g) => `<button class="chip ${g === activeGame ? 'chip--active' : ''}" data-shop-game="${g}">${esc(gameTitle(g))}</button>`).join('')}</nav>${dropdown({ name: 'shop-game', options: games.map((g) => [g, esc(gameTitle(g))]), value: activeGame, ariaLabel: 'Spiel wählen' })}` : `<h2 class="page-sub">${esc(gameTitle(activeGame))}</h2>`}
-        ${items.length ? '' : '<p class="empty">Der Shop ist gerade nicht erreichbar.</p>'}
-        ${groups
-          .map(
-            (g) => `
-          ${groups.length > 1 && g.label ? `<h2 class="page-sub">${esc(g.label)}</h2>` : ''}
-          <div class="shop-grid">${g.items.map(card).join('')}</div>`,
-          )
-          .join('')}
-      </section>`;
-    container.querySelectorAll('canvas[data-design]').forEach((c) => drawPreview(c, c.dataset.design, performance.now()));
-  };
-
-  const onClick = (e) => {
-    const buyBtn = e.target.closest('[data-buy]');
-    const equipBtn = e.target.closest('[data-equip]');
-    const gameBtn = e.target.closest('[data-shop-game]');
-    if (buyBtn) {
-      const item = eco.state.catalog.items.find((i) => i.id === buyBtn.dataset.buy);
-      if (item) confirmBuy(item);
-    } else if (equipBtn) {
-      eco.equip(equipBtn.dataset.equip).catch((err) => toast({ kind: 'toast--error', title: err?.message || 'Ausrüsten fehlgeschlagen.' }));
-    } else if (gameBtn) {
-      activeGame = gameBtn.dataset.shopGame;
-      render();
-    }
-  };
-
-  // Bewegte Designs (Regenbogen, Gold, Neon) in der Vorschau animieren
-  const animate = (t) => {
-    raf = requestAnimationFrame(animate);
-    container.querySelectorAll('canvas[data-design]').forEach((c) => {
-      if (ANIMATED.test(c.dataset.design)) drawPreview(c, c.dataset.design, t);
-    });
-  };
-
-  // Dropdown statt Chips auf dem Handy
-  const onChange = (e) => {
-    if (e.detail.name !== 'shop-game') return;
-    activeGame = e.detail.value;
-    render();
-  };
-
-  container.addEventListener('click', onClick);
-  container.addEventListener('dropdown-change', onChange);
-  const off = eco.onChange((e) => e.type === 'state' && render());
-  render();
-  raf = requestAnimationFrame(animate);
-  return () => {
-    off();
-    cancelAnimationFrame(raf);
-    container.removeEventListener('click', onClick);
-    container.removeEventListener('dropdown-change', onChange);
-  };
-}
-
-// ---------- Seite: Erfolge ----------
-
-export function renderAchievements(container) {
-  const render = () => {
-    const list = eco.state.catalog.achievements;
-    const done = list.filter((a) => eco.state.unlocked.has(a.id)).length;
-    const groups = [null, ...GAMES.map((g) => g.id)]
-      .map((game) => ({ game, items: list.filter((a) => (a.game || null) === game) }))
-      .filter((g) => g.items.length);
-    const title = (game) => (game ? GAMES.find((g) => g.id === game)?.title || game : 'Allgemein');
-    const date = (iso) => new Date(iso).toLocaleDateString('de-DE');
-
-    container.innerHTML = `
-      <section class="page">
-        <div class="page-head">
-          <h1>Erfolge</h1>
-          <p>${list.length ? `${done} von ${list.length} freigeschaltet. Erfolge mit Diamanten sind die härtesten.` : 'Erfolge sind gerade nicht erreichbar.'}</p>
-        </div>
-        ${eco.state.user ? '' : '<div class="page-cta">Melde dich an, um Erfolge zu sammeln. <button type="button" class="btn btn--primary btn--sm" data-login>Mit Google anmelden</button></div>'}
-        ${groups
-          .map(
-            (g) => `
-          <h2 class="page-sub">${esc(title(g.game))}</h2>
+export function achievementsHtml() {
+  const list = eco.state.catalog.achievements;
+  if (!list.length) return '<p class="empty">Erfolge sind gerade nicht erreichbar.</p>';
+  const groups = [null, ...GAMES.map((g) => g.id)]
+    .map((game) => ({ game, items: list.filter((a) => (a.game || null) === game) }))
+    .filter((g) => g.items.length);
+  const title = (game) => (game ? GAMES.find((g) => g.id === game)?.title || game : 'Allgemein');
+  const date = (iso) => new Date(iso).toLocaleDateString('de-DE');
+  return groups
+    .map(
+      (g) => `
+          <h3 class="collection-head">${esc(title(g.game))}</h3>
           <div class="ach-list">
             ${g.items
               .map((a) => {
                 const unlocked = eco.state.unlocked.get(a.id);
+                const pending = eco.state.pending.has(a.id);
                 const value = Math.min(a.threshold, eco.achievementValue(a));
                 const pct = unlocked ? 100 : Math.round((value / a.threshold) * 100);
                 const epic = a.reward_diamonds > 0;
                 return `
-                <article class="ach ${unlocked ? 'is-done' : ''} ${epic ? 'is-epic' : ''}">
+                <article class="ach ${unlocked ? 'is-done' : ''} ${epic ? 'is-epic' : ''} ${pending ? 'is-pending' : ''}">
                   <span class="ach-icon">${TROPHY}</span>
                   <div class="ach-body">
                     <h3>${esc(a.name)}</h3>
-                    <p>${esc(a.description)}</p>
-                    <div class="ach-bar"><span style="width:${pct}%"></span></div>
-                    <small>${unlocked ? `Freigeschaltet am ${date(unlocked)}` : `${fmt(value)} / ${fmt(a.threshold)}`}</small>
+                    <p title="${esc(a.description)}">${esc(a.description)}</p>
+                    <div class="ach-progress">
+                      <div class="ach-bar"><span style="width:${pct}%"></span></div>
+                      <small>${unlocked ? `<span title="Freigeschaltet am ${date(unlocked)}">✓ ${date(unlocked)}</span>` : `${fmt(value)} / ${fmt(a.threshold)}`}</small>
+                    </div>
                   </div>
-                  <span class="ach-reward">${rewardHtml({ coins: a.reward_coins, diamonds: a.reward_diamonds })}</span>
+                  <span class="ach-reward">
+                    ${rewardHtml({ coins: a.reward_coins, diamonds: a.reward_diamonds })}
+                    ${pending ? `<button type="button" class="btn btn--primary btn--sm ach-claim" data-claim="${a.id}">Abholen</button>` : ''}
+                  </span>
                 </article>`;
               })
               .join('')}
           </div>`,
-          )
-          .join('')}
-      </section>`;
-  };
-  const off = eco.onChange((e) => e.type === 'state' && render());
-  render();
-  return off;
+    )
+    .join('');
 }

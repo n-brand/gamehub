@@ -6,15 +6,18 @@
 //             | { type: 'guest', coins } | { type: 'error', message }
 
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js';
+import { isFreeItem, priceOf } from './pricing.js';
 
 const SUPABASE_JS = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 const AFTER_LOGIN_KEY = 'gamehub-after-login';
 const GAMES = ['snake', '2048', 'connect4', 'pairs', 'minesweeper', 'bricks', 'blocks', 'cubejump', 'watermelon'];
 
 // Demo-Modus zum Ausprobieren ohne Supabase (Daten nur im Browser): ?demo=1 an die Adresse hängen,
-// ?demo=alles startet angemeldet mit allen Designs und reichlich Guthaben.
+// ?demo=alles startet angemeldet mit allen Designs und reichlich Guthaben. Mit eingerichtetem Supabase
+// geht das nur lokal (localhost) – auf der Live-Seite wird ?demo ignoriert.
 const demoParam = new URLSearchParams(location.search).get('demo');
-const demo = !SUPABASE_URL && demoParam !== null;
+const local = ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname) || location.hostname.endsWith('.localhost');
+const demo = demoParam !== null && (!SUPABASE_URL || local);
 export const enabled = demo || Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
 
 const emptyProfile = () => ({ coins: 0, diamonds: 0, spin_streak: 0, last_spin: null });
@@ -28,7 +31,9 @@ export const state = {
   equipped: {}, // Slot → Artikel-ID (z. B. snake, cubejump-theme, cubejump-skin)
   stats: {}, // Spiel → { plays, wins, best_score, data }
   unlocked: new Map(), // Erfolg-ID → Datum
-  catalog: { items: [], achievements: [], wheel: [], rules: [] },
+  pending: new Set(), // freigeschaltete Erfolge, deren Belohnung noch abgeholt werden kann
+  // packages = Tauschpakete, rate = Grundkurs Diamant → Coins
+  catalog: { items: [], achievements: [], wheel: [], rules: [], packages: [], rate: 150 },
 };
 
 let client = null;
@@ -96,6 +101,7 @@ async function applySession(session) {
     state.equipped = {};
     state.stats = {};
     state.unlocked = new Map();
+    state.pending = new Set();
   }
   emit({ type: 'state' });
 }
@@ -141,18 +147,29 @@ export async function signOut() {
 // ---------- Daten laden ----------
 
 async function loadCatalog() {
-  const [items, achievements, wheel, rules] = await Promise.all([
+  const [items, achievements, wheel, rules, packages, settings] = await Promise.all([
     client.from('shop_items').select('*').order('sort'),
     client.from('achievements').select('*').order('sort'),
     client.from('wheel_segments').select('*').order('idx'),
     client.from('reward_rules').select('*'),
+    client.from('exchange_packages').select('*').order('sort'),
+    client.from('shop_settings').select('*'),
   ]);
   state.catalog = {
     items: items.data || [],
     achievements: achievements.data || [],
     wheel: wheel.data || [],
     rules: rules.data || [],
+    packages: packages.data || [],
+    rate: (settings.data || []).find((s) => s.key === 'diamond_coin_rate')?.value ?? 150,
   };
+}
+
+// Katalog neu laden (z. B. wenn sich ein Preis geändert hat)
+export async function reloadCatalog() {
+  if (!client) return;
+  await loadCatalog();
+  emit({ type: 'state' });
 }
 
 async function loadPlayer() {
@@ -161,13 +178,15 @@ async function loadPlayer() {
     client.from('profiles').select('coins, diamonds, spin_streak, last_spin').eq('id', state.user.id).maybeSingle(),
     client.from('inventory').select('item_id'),
     client.from('equipped').select('slot, item_id'),
-    client.from('user_achievements').select('achievement_id, unlocked_at'),
+    // select('*'): reward_pending gibt es erst mit 003_achievement_claims.sql
+    client.from('user_achievements').select('*'),
     client.from('game_stats').select('game, plays, wins, best_score, data'),
   ]);
   state.profile = profile.data || emptyProfile();
   state.inventory = new Set((inventory.data || []).map((r) => r.item_id));
   state.equipped = Object.fromEntries((equipped.data || []).map((r) => [r.slot, r.item_id]));
   state.unlocked = new Map((unlocked.data || []).map((r) => [r.achievement_id, r.unlocked_at]));
+  state.pending = new Set((unlocked.data || []).filter((r) => r.reward_pending).map((r) => r.achievement_id));
   state.stats = Object.fromEntries((stats.data || []).map((r) => [r.game, r]));
 }
 
@@ -178,7 +197,8 @@ export async function refresh() {
 
 // ---------- Abfragen für die Oberfläche ----------
 
-export const isFree = (item) => !item.price_coins && !item.price_diamonds;
+// Gratis = Preis 0 und nicht exklusiv (exklusive Designs gibt es nur per Creator-Code)
+export const isFree = isFreeItem;
 
 export function owns(itemId) {
   const item = state.catalog.items.find((i) => i.id === itemId);
@@ -245,8 +265,32 @@ function applyBalance(data) {
   }
 }
 
+// Neu freigeschaltete Erfolge melden; abholbare Belohnungen merken (gelber Punkt am Inventar)
 function announceAchievements(list) {
-  for (const a of list || []) emit({ type: 'achievement', ...a });
+  for (const a of list || []) {
+    if (a.pending) state.pending.add(a.id);
+    emit({ type: 'achievement', ...a });
+  }
+}
+
+export const pendingCount = () => state.pending.size;
+
+// Belohnung eines freigeschalteten Erfolgs abholen
+export async function claimAchievement(id) {
+  if (!client || !state.user) throw new Error('Nicht angemeldet');
+  const { data, error } = await client.rpc('claim_achievement', { p_achievement: id });
+  if (error) {
+    if (error.code === 'PGRST202') throw new Error('Abholen geht erst, wenn 003_achievement_claims.sql in Supabase ausgeführt ist.');
+    if (error.message === 'Diese Belohnung hast du schon abgeholt.') {
+      state.pending.delete(id);
+      emit({ type: 'state' });
+    }
+    throw error;
+  }
+  applyBalance(data);
+  state.pending.delete(id);
+  emit({ type: 'state' });
+  return data;
 }
 
 // Runde melden. result: 'win' | 'loss' | 'draw' | 'score'
@@ -298,12 +342,45 @@ export function applySpin(data) {
   emit({ type: 'state' });
 }
 
+// Kaufen zu dem Preis, den der Spieler gerade sieht (der Server lehnt ab, wenn er sich inzwischen geändert hat).
+// Ausgerüstet wird nicht automatisch – das entscheidet der Spieler in der Detailansicht.
 export async function buy(itemId) {
-  const { data, error } = await client.rpc('buy_item', { p_item: itemId });
-  if (error) throw error;
+  if (!client || !state.user) throw new Error('Nicht angemeldet');
+  const item = state.catalog.items.find((i) => i.id === itemId);
+  if (!item) throw new Error('Unbekannter Artikel');
+  const price = priceOf(item);
+  let { data, error } = await client.rpc('buy_item', { p_item: itemId, p_coins: price.coins, p_diamonds: price.diamonds });
+  // 002_shop.sql noch nicht ausgeführt → alte Funktion buy_item(p_item) ohne Preisprüfung
+  if (error?.code === 'PGRST202') ({ data, error } = await client.rpc('buy_item', { p_item: itemId }));
+  if (error) {
+    if (error.message === 'Der Preis hat sich geändert.') await reloadCatalog();
+    throw error;
+  }
   applyBalance(data);
   state.inventory.add(itemId);
   emit({ type: 'state' });
+  return data;
+}
+
+// Diamanten in Coins tauschen (nur ganze Pakete; die Coins rechnet der Server)
+export async function exchange(packageId) {
+  if (!client || !state.user) throw new Error('Nicht angemeldet');
+  const { data, error } = await client.rpc('exchange_diamonds', { p_package: packageId });
+  if (error) throw error;
+  applyBalance(data);
+  emit({ type: 'state' });
+  return data;
+}
+
+// Creator-Code einlösen. Antwort: { code, items, new_items, coins_gained, diamonds_gained, coins, diamonds }
+export async function redeemCode(code) {
+  if (!client || !state.user) throw new Error('Nicht angemeldet');
+  const { data, error } = await client.rpc('redeem_code', { p_code: code });
+  if (error) throw error;
+  applyBalance(data);
+  for (const id of data.items || []) state.inventory.add(id);
+  emit({ type: 'state' });
+  return data;
 }
 
 // Nur im Demo-Modus: alles freischalten bzw. die Demo-Daten zurücksetzen

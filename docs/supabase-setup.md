@@ -3,7 +3,8 @@
 Dauer: etwa 20–30 Minuten. Alles läuft im kostenlosen Tarif.
 
 > **Vorher ausprobieren:** Mit `?demo=1` an der Adresse (z. B. `http://localhost:4177/?demo=1`) läuft
-> alles mit einem Demo-Backend im Browser – ohne Supabase und ohne echten Login.
+> alles mit einem Demo-Backend im Browser – ohne Supabase und ohne echten Login. Ist Supabase schon
+> eingerichtet, funktioniert das nur lokal (localhost); auf der Live-Seite wird `?demo` ignoriert.
 > Mit `?demo=alles` startet die Demo angemeldet, mit allen Designs und reichlich Coins und Diamanten.
 > Im Profil-Menü der Demo gibt es außerdem „Alles freischalten“ und „Demo zurücksetzen“.
 
@@ -27,6 +28,45 @@ Dauer: etwa 20–30 Minuten. Alles läuft im kostenlosen Tarif.
 
 Das Skript kann später erneut ausgeführt werden (z. B. nach Änderungen an Preisen oder Erfolgen) – die
 Kataloge werden dabei aktualisiert, Spielerdaten bleiben erhalten.
+
+5. Danach genauso [`supabase/migrations/002_shop.sql`](../supabase/migrations/002_shop.sql) ausführen
+   (Shop 2.0: Rabatte, Diamanten-Tausch in Paketen, Creator-Codes, exklusive Designs). Erwartet ebenfalls
+   „Success. No rows returned“; danach gibt es u. a. die Tabellen `exchange_packages` und `creator_codes`.
+
+6. Danach [`supabase/migrations/003_achievement_claims.sql`](../supabase/migrations/003_achievement_claims.sql)
+   ausführen: Erfolgs-Belohnungen werden nicht mehr sofort gutgeschrieben, sondern im Inventar abgeholt.
+
+7. Danach [`supabase/migrations/004_new_skins.sql`](../supabase/migrations/004_new_skins.sql) ausführen (neue Shop-Designs).
+
+**Reihenfolge:** Immer `001`, `002`, `003`, dann `004`. Wer `001` erneut ausführt, führt danach auch `002`, `003`
+und `004` erneut aus.
+Alle SQL-Befehle liegen im Repo unter `supabase/migrations/`.
+
+### Shop-Werte selbst ändern (SQL Editor)
+
+```sql
+-- Rabatt: 30 % auf Snake „Neon“ für 3 Tage
+update public.shop_items set sale_percent = 30, sale_until = now() + interval '3 days' where id = 'snake-neon';
+-- Rabatt beenden
+update public.shop_items set sale_percent = 0, sale_until = null where id = 'snake-neon';
+-- Wochenend-Aktion: alles 20 % günstiger bis Sonntagabend (ohne exklusive Designs)
+update public.shop_items set sale_percent = 20, sale_until = '2026-10-11 23:59+02' where not exclusive;
+-- Hervorheben (gelber Rand + Schild im Shop), z. B. „Beliebt“ oder „Neu“; entfernen mit = null
+update public.shop_items set highlight = 'Beliebt' where id = 'snake-neon';
+-- Grundkurs Diamant → Coins
+update public.shop_settings set value = 150 where key = 'diamond_coin_rate';
+-- Tauschpaket ändern (Diamanten, Bonus in %)
+update public.exchange_packages set bonus_percent = 35 where id = 'p25';
+-- Creator-Code anlegen: Designs (IDs aus shop_items) und/oder Coins/Diamanten,
+-- optional mit Ablaufdatum und Höchstzahl an Einlösungen
+insert into public.creator_codes (code, coins, diamonds, items, expires_at, max_uses, note)
+values ('SOMMER', 500, 0, array['snake-galaxy'], now() + interval '14 days', 1000, 'Sommer-Aktion');
+-- Code abschalten
+update public.creator_codes set active = false where code = 'SOMMER';
+```
+
+Codes immer in Großbuchstaben anlegen – Spieler können sie in beliebiger Schreibweise eingeben.
+Exklusive Designs (`exclusive = true`) erscheinen nie im Shop und lassen sich nur per Code bekommen.
 
 ## 3. Google-Login einrichten
 
@@ -74,7 +114,10 @@ Kataloge werden dabei aktualisiert, Spielerdaten bleiben erhalten.
 1. Lokal starten (`node server.js`) und <http://localhost:4177> öffnen.
 2. **Mit Google anmelden** → nach dem Login stehen oben Coins und Diamanten.
 3. Eine Runde spielen → unten rechts erscheint „+… Coins“.
-4. Glücksrad oben in der Kopfzeile drehen, im **Shop** ein Snake-Design kaufen.
+4. Glücksrad oben in der Kopfzeile drehen, im **Shop** ein Design kaufen und in der Detailansicht ausrüsten.
+5. Ganz unten im Shop den Code `GAMEHUB` einlösen → zwei exklusive Galaxie-Designs und 300 Coins;
+   im **Profil** (Menü oben rechts) erscheinen sie unter „Meine Sammlung“.
+6. Mit Diamanten (z. B. vom Glücksrad) ein Paket unter „Diamanten tauschen“ eintauschen.
 
 Nach dem Push auf `main` ist alles auch unter <https://n-brand.github.io/gamehub/> aktiv.
 
@@ -86,4 +129,5 @@ Nach dem Push auf `main` ist alles auch unter <https://n-brand.github.io/gamehub
   Für eine öffentliche Seite ist eine Datenschutzerklärung nötig.
 - **Werte anpassen:** Coins pro Spiel, Glücksrad-Chancen, Erfolge und Preise stehen in den Tabellen
   `reward_rules`, `wheel_segments`, `achievements` und `shop_items` (direkt im Table Editor änderbar oder
-  im SQL-Skript). Wie ein Design aussieht, steht in `public/js/designs.js`.
+  im SQL-Skript), Tauschkurs und Pakete in `shop_settings` und `exchange_packages`, Codes in
+  `creator_codes`. Wie ein Design aussieht, steht in `public/js/designs.js`.

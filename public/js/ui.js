@@ -1,5 +1,10 @@
 // Gemeinsame Bausteine der Oberfläche.
 
+// Text sicher in HTML einsetzen
+export const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+// Zahlen (1.250 bzw. Kurzform 12,4K) stehen in format.js
+export { fmt, fmtShort } from './format.js';
+
 const FILTER_ICON =
   '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5h16l-6.2 7.3v5.4l-3.6 1.8v-7.2Z" fill="currentColor" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>';
 const CHEVRON =

@@ -2,7 +2,10 @@ import { CATEGORIES, GAMES, getGame } from './games.js';
 import * as store from './storage.js';
 import { art } from './art.js';
 import * as economy from './economy.js';
-import { initEconomyUI, renderShop, renderAchievements } from './ui-economy.js';
+import { initEconomyUI } from './ui-economy.js';
+import { renderShop, priceHtml } from './shop.js';
+import { trialApi, TRIAL_SECONDS } from './trial.js';
+import { renderInventory } from './inventory.js';
 import { renderMenu } from './game-menu.js';
 import { renderLegal } from './legal.js';
 import { dropdown } from './ui.js';
@@ -160,21 +163,67 @@ app.addEventListener('click', (e) => {
 
 // ---------- Spieleseite ----------
 
-async function renderGame(id) {
+// Probe-Runde („Ausprobieren“ im Shop, #/game/<spiel>/probe/<design>): Design aus dem Katalog – beim direkten
+// Aufruf erst den Start der Wirtschaft abwarten. Nur kaufbare Designs dieses Spiels, sonst normales Spiel.
+async function findTrialItem(gameId, itemId) {
+  if (!economy.enabled) return null;
+  if (!economy.state.ready) {
+    await new Promise((resolve) => {
+      const off = economy.onChange(() => {
+        if (economy.state.ready) {
+          off();
+          resolve();
+        }
+      });
+    });
+  }
+  const item = economy.state.catalog.items.find((i) => i.id === itemId);
+  return item && item.game === gameId && !item.exclusive ? item : null;
+}
+
+const trialBar = (item) => `
+  <div class="trial-bar">
+    <span class="trial-tag">Probe</span>
+    <span class="trial-text"><strong>${escapeHtml(item.name)}</strong><span class="trial-rules"> · ohne Coins und Erfolge</span></span>
+    <span class="trial-time" data-trial-time title="Restzeit"></span>
+    <a class="btn btn--primary btn--sm" href="#/shop/${item.id}">Kaufen</a>
+  </div>`;
+
+const trialEndHtml = (item, reason) => `
+  <div class="trial-end">
+    <p class="trial-end-kicker">${reason === 'time' ? 'Die Probezeit ist um' : 'Probe-Runde vorbei'}</p>
+    <h2>Gefällt dir „${escapeHtml(item.name)}“?</h2>
+    <p class="trial-end-text">Kauf das Design, dann spielst du damit richtig – mit Coins und Erfolgen.</p>
+    <div class="trial-end-price">${priceHtml(item, { big: true })}</div>
+    <div class="trial-end-actions">
+      <a class="btn btn--primary" href="#/shop/${item.id}">Jetzt kaufen</a>
+      <a class="btn" href="#/shop">Zurück zum Shop</a>
+    </div>
+  </div>`;
+
+async function renderGame(id, trialId = null) {
   const game = getGame(id);
   if (!game || !game.available) {
     location.hash = '#/';
     return;
   }
-  store.addRecent(id);
+  const trial = trialId ? await findTrialItem(id, trialId) : null;
+  if (trialId) {
+    // Seite könnte inzwischen gewechselt sein; ungültige Probe → normales Spiel
+    if (!location.hash.startsWith(`#/game/${id}/probe/${trialId}`)) return;
+    if (!trial) history.replaceState(null, '', `${location.pathname}${location.search}#/game/${id}`);
+  }
+  // Probe-Runden zählen nicht als „zuletzt gespielt“
+  if (!trial) store.addRecent(id);
 
   const others = GAMES.filter((g) => g.id !== id && g.categories.some((c) => game.categories.includes(c)));
+  const [backHref, backLabel] = trial ? ['#/shop', 'Zurück zum Shop'] : ['#/', 'Alle Spiele'];
 
   app.innerHTML = `
     <div class="game-page">
       <div class="game-stage">
       <div class="game-head">
-        <a href="#/" class="back" aria-label="Alle Spiele"><span aria-hidden="true">←</span><span class="back-label"> Alle Spiele</span></a>
+        <a href="${backHref}" class="back" aria-label="${backLabel}"><span aria-hidden="true">←</span><span class="back-label"> ${backLabel}</span></a>
         <h1>${escapeHtml(game.title)}</h1>
         <div class="game-actions">
           <button class="btn" id="menu" hidden title="Spielmenü" aria-label="Spielmenü">${GRID_ICON}<span class="btn-label">Menü</span></button>
@@ -182,6 +231,7 @@ async function renderGame(id) {
           <button class="btn" id="fullscreen" title="Vollbild" aria-label="Vollbild">${FULLSCREEN_ICON}<span class="btn-label">Vollbild</span></button>
         </div>
       </div>
+      ${trial ? trialBar(trial) : ''}
       <div class="game-fs" id="fs">
         <div class="game-frame" id="frame" style="${themeVars(game)}"></div>
         <button class="fs-exit" id="fs-exit" type="button" title="Vollbild beenden" aria-label="Vollbild beenden">${EXIT_FULLSCREEN_ICON}</button>
@@ -233,6 +283,58 @@ async function renderGame(id) {
     getDesign: (slot = id) => economy.getEquipped(slot),
   };
 
+  // Probe-Runde: ohne Spielmenü direkt auf der leichtesten Stufe; nach einer Runde (kurz danach, damit man
+  // das Ende noch sieht) oder nach TRIAL_SECONDS ersetzt die Abschluss-Karte das Spiel. Die Zeit läuft ab
+  // dem ersten Klick/Tastendruck – vorher wartet das Spiel ohnehin auf den Start.
+  if (trial) {
+    const timeEl = app.querySelector('[data-trial-time]');
+    let left = TRIAL_SECONDS;
+    let ended = false;
+    let tick = 0;
+    let endTimer = 0;
+    let stopGame = null;
+    const showTime = () => (timeEl.textContent = `${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}`);
+    const stopTimers = () => {
+      clearInterval(tick);
+      clearTimeout(endTimer);
+      frame.removeEventListener('pointerdown', startClock);
+      window.removeEventListener('keydown', startClock);
+    };
+    const end = (reason) => {
+      if (ended) return;
+      ended = true;
+      stopTimers();
+      stopGame?.();
+      stopGame = null;
+      left = 0;
+      showTime();
+      frame.innerHTML = trialEndHtml(trial, reason);
+    };
+    function startClock() {
+      if (tick || ended) return;
+      tick = setInterval(() => {
+        left -= 1;
+        showTime();
+        if (left <= 0) end('time');
+      }, 1000);
+    }
+    frame.addEventListener('pointerdown', startClock);
+    window.addEventListener('keydown', startClock);
+    showTime();
+    stopGame = mod.mount(frame, trialApi(api, trial, {
+      level: game.levels?.[0]?.id,
+      onRoundEnd: () => {
+        if (!ended && !endTimer) endTimer = setTimeout(() => end('round'), 1500);
+      },
+    }));
+    cleanupGame = () => {
+      ended = true;
+      stopTimers();
+      stopGame?.();
+    };
+    return;
+  }
+
   // Erst das Spielmenü (Level, Designs, Erfolge), dann das Spiel mit der gewählten Stufe
   const showMenu = () => {
     cleanupGame?.();
@@ -259,19 +361,23 @@ function route() {
     cleanupGame();
     cleanupGame = null;
   }
-  const match = location.hash.match(/^#\/game\/([\w-]+)/);
+  const match = location.hash.match(/^#\/game\/([\w-]+)(?:\/probe\/([\w-]+))?/); // …/probe/<id> = Probe-Runde
+  const shop = location.hash.match(/^#\/shop(?:\/([\w-]+))?$/); // #/shop/<id> öffnet die Detailansicht
   let nav = '#/'; // aktiver Menüpunkt: „Games“ gilt für Übersicht und Spieleseiten
   if (match) {
-    renderGame(match[1]);
-  } else if (location.hash === '#/shop' && economy.enabled) {
-    cleanupGame = renderShop(app);
+    renderGame(match[1], match[2] || null);
+  } else if (shop && economy.enabled) {
+    cleanupGame = renderShop(app, { item: shop[1] || null });
     nav = '#/shop';
+  } else if (['#/inventar', '#/profil', '#/erfolge'].includes(location.hash) && economy.enabled) {
+    // Inventar: Designs, Erfolge und Kontostand. Alte Adressen (#/profil, #/erfolge) landen hier.
+    const focus = location.hash === '#/erfolge' ? 'achievements' : null;
+    if (location.hash !== '#/inventar') history.replaceState(null, '', `${location.pathname}${location.search}#/inventar`);
+    cleanupGame = renderInventory(app, { focus });
+    nav = '#/inventar';
   } else if (location.hash === '#/impressum' || location.hash === '#/datenschutz') {
     renderLegal(app, location.hash.slice(2));
     nav = null;
-  } else if (location.hash === '#/erfolge' && economy.enabled) {
-    cleanupGame = renderAchievements(app);
-    nav = '#/erfolge';
   } else {
     renderOverview();
   }
