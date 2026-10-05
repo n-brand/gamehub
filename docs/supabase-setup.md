@@ -12,7 +12,11 @@ Dauer: etwa 20–30 Minuten. Alles läuft im kostenlosen Tarif.
 1. Auf <https://supabase.com> anmelden (z. B. mit GitHub) und **New project** wählen.
 2. Name: `gamehub`, Region: **Central EU (Frankfurt)**.
 3. Ein sicheres Datenbank-Passwort erzeugen und gut aufbewahren (wird für die Webseite nicht gebraucht).
-4. Warten, bis das Projekt fertig ist (1–2 Minuten).
+4. Unter **Security** „Enable Data API“ **und** „Automatically expose new tables“ **eingeschaltet lassen**:
+   Das SQL-Skript vergibt keine eigenen Leserechte (`grant select`) auf die Tabellen. Geschützt sind die
+   Daten trotzdem über Row Level Security, die das Skript für jede Tabelle einschaltet.
+   „Enable automatic RLS“ ist egal, die GitHub-Verknüpfung leer lassen.
+5. Warten, bis das Projekt fertig ist (1–2 Minuten).
 
 ## 2. Datenbank anlegen
 
@@ -28,7 +32,9 @@ Kataloge werden dabei aktualisiert, Spielerdaten bleiben erhalten.
 
 ### 3a. Google Cloud
 
-1. <https://console.cloud.google.com> öffnen, oben ein **neues Projekt** anlegen (Name z. B. `GameHub`).
+1. <https://console.cloud.google.com/projectcreate> öffnen und ein **neues Projekt** anlegen (Name z. B. `GameHub`).
+   Das Angebot „Google Cloud mit 300 $ Guthaben testen“ **nicht** annehmen: Für den Login sind weder
+   der Testzeitraum noch eine Kreditkarte nötig.
 2. **APIs & Services → OAuth consent screen** (bzw. „Google Auth Platform“):
    - App-Name `GameHub`, Support-E-Mail auswählen, Zielgruppe **External**.
    - Solange die App im Modus „Testing“ ist, können sich nur eingetragene **Test users** anmelden –
