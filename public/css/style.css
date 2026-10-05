@@ -85,11 +85,9 @@ a { color: inherit; }
 .theme-toggle:hover { border-color: var(--navy); }
 .theme-toggle svg { width: 22px; height: 22px; }
 .search {
-  min-width: 0;
-  flex: 1;
-  max-width: 440px;
-  margin-left: auto;
-  padding: 11px 18px;
+  width: 100%;
+  height: 46px;
+  padding: 0 18px;
   border-radius: 999px;
   border: 2px solid var(--line);
   background: var(--card);
@@ -97,6 +95,58 @@ a { color: inherit; }
   font: inherit;
   font-weight: 700;
 }
+.search-wrap {
+  position: relative;
+  min-width: 0;
+  flex: 1;
+  max-width: 440px;
+  margin-left: auto;
+}
+/* „Zuletzt gespielt“ und Favoriten klappen beim Klick ins leere Suchfeld auf */
+.search-pop {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  z-index: 30;
+  padding: 10px;
+  border-radius: 16px;
+  border: 2px solid var(--line);
+  background: var(--card);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+  max-height: calc(100dvh - 110px);
+  overflow-y: auto;
+}
+.search-pop h3 {
+  margin: 4px 8px 8px;
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.search-pop h3:not(:first-child) { margin-top: 14px; }
+.search-pop p { margin: 4px 8px 6px; color: var(--muted); font-weight: 700; }
+.recent-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 8px;
+  border-radius: 12px;
+  color: var(--navy);
+  font-weight: 800;
+  text-decoration: none;
+}
+.recent-item:hover, .recent-item:focus-visible { outline: none; background: color-mix(in srgb, var(--line) 55%, transparent); }
+.recent-thumb {
+  flex: none;
+  width: 52px;
+  height: 39px;
+  overflow: hidden;
+  border-radius: 8px;
+  background: var(--bg);
+}
+.recent-thumb .art { display: block; width: 100%; height: 100%; }
 .search::placeholder { color: var(--muted); font-weight: 600; }
 .search:focus { outline: none; border-color: var(--navy); }
 
@@ -131,62 +181,88 @@ main {
 }
 .tile .badge { top: 10px; left: auto; right: 10px; transform: none; font-size: 0.72rem; padding: 3px 12px; }
 
-/* ---------- Hero & Feature-Karten ---------- */
-.hero { text-align: center; padding: 28px 0 4px; }
-.hero h1 { margin: 0; font-size: 2.6rem; font-weight: 900; letter-spacing: -0.02em; }
-.hero p { margin: 6px 0 0; font-size: 1.1rem; color: var(--muted); }
-
-/* Feature-Karten teilen sich die Breite (max. ~380px je Karte bei 4 Stück), damit keine allein umbricht */
-.features {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 28px;
-  max-width: 1600px;
-  margin: 36px auto 16px;
-}
-.feature {
-  --foot: color-mix(in srgb, var(--bg) 65%, var(--edge));
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  border-radius: var(--radius);
-  background: var(--bg);
-  color: var(--ink);
-  text-decoration: none;
-  box-shadow: 0 6px 0 var(--edge);
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
-}
-.feature-art {
-  aspect-ratio: 4 / 3;
-  overflow: hidden;
-  border-radius: var(--radius) var(--radius) 0 0;
-}
-.feature-body {
-  flex: 1;
-  padding: 18px 22px 22px;
-  border-radius: 0 0 var(--radius) var(--radius);
-  background: var(--foot);
-}
-.feature h3 { margin: 0; font-size: 1.45rem; font-weight: 900; }
-.feature p { margin: 6px 0 14px; font-size: 0.95rem; opacity: 0.85; }
-.feature-link {
-  font-weight: 800;
-  font-size: 0.95rem;
-  text-decoration: underline;
-  text-decoration-thickness: 2px;
-  text-underline-offset: 5px;
-}
-.feature-link .arrow { display: inline-block; transition: transform 0.15s; }
-
-.feature.is-playable:hover, .feature.is-playable:focus-within { transform: translateY(-4px); box-shadow: 0 10px 0 var(--edge); }
-.feature.is-playable:hover .arrow { transform: translateX(5px); }
-
 /* ---------- Filter-Chips ---------- */
 .chips {
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
   margin-top: 32px;
+}
+/* Überschrift der Spieleliste mit Platz für den Filter-Knopf (Handy) rechts daneben */
+.section-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 32px 0 14px; }
+.section-head h2 { min-width: 0; margin: 0; }
+
+/* Handy: Filter als Dropdown statt Chip-Reihe (Übersicht und Shop), spart Platz */
+.dropdown { position: relative; display: none; flex: none; }
+.dropdown-btn { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px 8px 16px; }
+.dropdown-btn svg { flex: none; width: 16px; height: 16px; }
+.dropdown-chevron { transition: transform 0.15s; }
+.dropdown-btn[aria-expanded="true"] .dropdown-chevron { transform: rotate(180deg); }
+.dropdown-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 20;
+  min-width: 220px;
+  max-height: min(60vh, 440px);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px;
+  border-radius: 16px;
+  border: 2px solid var(--line);
+  background: var(--card);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3);
+}
+.dropdown-menu[hidden] { display: none; }
+.dropdown--end .dropdown-menu { left: auto; right: 0; }
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 12px;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  color: var(--navy);
+  font: inherit;
+  font-weight: 800;
+  text-align: left;
+  cursor: pointer;
+}
+.dropdown-item:hover, .dropdown-item:focus-visible { outline: none; background: rgba(127, 127, 127, 0.14); }
+.dropdown-item[aria-selected="true"] { background: rgba(127, 127, 127, 0.1); }
+.dropdown-check { flex: none; width: 18px; height: 18px; }
+.page > .dropdown { margin-top: 20px; }
+@media (max-width: 700px) {
+  .chips--collapse { display: none; }
+  .dropdown { display: block; }
+  .section-head { margin-top: 20px; }
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* PC: Filter der Übersicht bleiben beim Scrollen direkt unter der Kopfzeile (74px = 46px Knöpfe + 2 × 14px) */
+@media (min-width: 901px) {
+  .chips--sticky {
+    position: sticky;
+    top: 74px;
+    z-index: 5;
+    margin: 20px -40px 0;
+    padding: 12px 40px;
+    /* wie die Kopfzeile: durchscheinend und weichgezeichnet, über die volle Breite */
+    background: var(--topbar);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
 }
 .chip {
   padding: 8px 20px;
@@ -226,7 +302,7 @@ section h2 { font-size: 1.3rem; font-weight: 900; margin: 32px 0 14px; }
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 .tile-art { aspect-ratio: 4 / 3; overflow: hidden; }
-.tile-art .art, .feature-art .art { display: block; width: 100%; height: 100%; transition: transform 0.3s ease; }
+.tile-art .art { display: block; width: 100%; height: 100%; transition: transform 0.3s ease; }
 .tile-foot {
   display: flex;
   flex-direction: column;
@@ -241,7 +317,7 @@ section h2 { font-size: 1.3rem; font-weight: 900; margin: 32px 0 14px; }
 .is-playable:hover .art { transform: scale(1.05); }
 
 .is-soon { cursor: default; }
-.is-soon .tile-art, .is-soon .feature-art { filter: saturate(0.55); opacity: 0.8; }
+.is-soon .tile-art { filter: saturate(0.55); opacity: 0.8; }
 
 .art-num {
   font-family: var(--font);
@@ -281,6 +357,14 @@ section h2 { font-size: 1.3rem; font-weight: 900; margin: 32px 0 14px; }
 .back { text-decoration: none; font-weight: 800; color: var(--muted); }
 .back:hover { color: var(--navy); }
 .game-actions { display: flex; gap: 12px; }
+.game-actions .btn { display: inline-flex; align-items: center; gap: 8px; }
+.game-actions .btn[hidden] { display: none; }
+.game-actions .btn svg { flex: none; width: 18px; height: 18px; }
+/* Aktiver Umschalter (z. B. Favorit): gelb gefüllt wie der Hauptknopf */
+.btn.is-on, .btn.is-on:hover, .btn.is-on:active { background: var(--yellow); color: var(--on-accent); border-color: var(--on-accent); }
+.btn.is-on { box-shadow: 0 3px 0 var(--on-accent); }
+.btn.is-on:hover { box-shadow: 0 4px 0 var(--on-accent); }
+.btn.is-on:active { box-shadow: 0 1px 0 var(--on-accent); }
 
 /* Bühne = sichtbare Fensterhöhe unter der Kopfzeile. Das Spielfeld passt sich per
    Container-Einheiten (cqi/cqh) an Breite UND Höhe des Rahmens an. */
@@ -290,10 +374,18 @@ section h2 { font-size: 1.3rem; font-weight: 900; margin: 32px 0 14px; }
   height: calc(100dvh - var(--topbar-h) - 28px);
   min-height: 380px;
 }
+/* Vollbild-Bereich: Rahmen + „Vollbild beenden“-Knopf */
+.game-fs {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  margin-top: 14px;
+}
 .game-frame {
   flex: 1;
   min-height: 0;
-  margin-top: 14px;
   padding: 18px;
   border-radius: var(--radius);
   background: var(--edge, var(--card));
@@ -303,7 +395,26 @@ section h2 { font-size: 1.3rem; font-weight: 900; margin: 32px 0 14px; }
   justify-content: center;
   container-type: size;
 }
-.game-frame:fullscreen { border-radius: 0; padding: 24px; }
+.game-fs:fullscreen { margin: 0; background: var(--page); }
+.game-fs:fullscreen .game-frame { border-radius: 0; padding: 64px 24px 24px; box-shadow: none; }
+.fs-exit {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 5;
+  display: none;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(14, 26, 43, 0.6);
+  color: #fff;
+  cursor: pointer;
+}
+.fs-exit svg { width: 22px; height: 22px; }
+.fs-exit:hover { background: rgba(14, 26, 43, 0.8); }
+.game-fs:fullscreen .fs-exit { display: grid; }
 
 .game-info { max-width: 820px; margin-top: 28px; font-size: 1.1rem; color: var(--muted); }
 .game-info strong { color: var(--navy); }
@@ -385,20 +496,26 @@ section h2 { font-size: 1.3rem; font-weight: 900; margin: 32px 0 14px; }
 }
 
 /* ---------- Kleinere Bildschirme (Desktop first) ---------- */
-@media (max-width: 1100px) {
-  .features { gap: 24px; }
-}
 @media (max-width: 700px) {
   .topbar { padding: 12px 16px; gap: 12px; }
   .logo { font-size: 1.25rem; }
   main { padding: 8px 16px 48px; }
-  .hero h1 { font-size: 2.2rem; }
-  .features { grid-template-columns: 1fr; gap: 36px; }
   .grid { grid-template-columns: 1fr 1fr; gap: 18px; }
   .tile-foot { padding: 10px 12px 12px; }
   .tile-cats { display: none; }
-  .game-head h1 { font-size: 1.7rem; }
+  /* Spieleseite: eine Zeile (Zurück · Titel · Icon-Knöpfe), damit das Spielfeld möglichst groß wird */
+  .game-stage { height: calc(100dvh - var(--topbar-h) - 16px); }
+  .game-head { flex-wrap: nowrap; gap: 10px; margin-top: 10px; }
+  .game-head h1 { min-width: 0; font-size: 1.25rem; line-height: 1.15; overflow-wrap: break-word; }
+  .game-head .back { flex: none; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--line); background: var(--card); font-size: 1.15rem; }
+  .back-label { display: none; }
+  .game-actions { flex: none; gap: 8px; }
+  .game-actions .btn { justify-content: center; width: 40px; height: 40px; padding: 0; }
+  .game-actions .btn-label { display: none; }
+  .game-fs { margin-top: 10px; }
+  .game-fs:fullscreen .game-frame { padding: 62px 12px 12px; }
   .game-frame { padding: 10px; }
+  .game-info { margin-top: 20px; font-size: 1rem; }
   .snake-hud { font-size: 1.1rem; }
 }
 
@@ -432,7 +549,6 @@ section h2 { font-size: 1.3rem; font-weight: 900; margin: 32px 0 14px; }
 .is-playable:hover .fav-btn, .is-playable:focus-within .fav-btn, .fav-btn.is-on { opacity: 1; }
 .fav-btn:hover { transform: scale(1.12); background: rgba(14, 26, 43, 0.8); }
 .fav-btn.is-on { color: var(--yellow); }
-.feature .fav-btn { top: 14px; left: 14px; width: 40px; height: 40px; }
 @media (hover: none) {
   .fav-btn { opacity: 1; }
 }
@@ -485,6 +601,12 @@ section h2 { font-size: 1.3rem; font-weight: 900; margin: 32px 0 14px; }
   to { opacity: 0; transform: translateY(-34px); }
 }
 .g2048-new { margin-left: auto; align-self: center; }
+@container (max-width: 420px) {
+  .g2048-hud { gap: 8px; margin-bottom: 12px; }
+  .g2048-box { flex: 1; min-width: 0; padding: 6px 12px; }
+  .g2048-box b { font-size: 1.3rem; }
+  .g2048-new { flex: none; padding: 10px 14px; font-size: 0.85rem; }
+}
 
 .g2048-board {
   position: relative;
@@ -667,9 +789,15 @@ section h2 { font-size: 1.3rem; font-weight: 900; margin: 32px 0 14px; }
 
 /* Schmaler Spielrahmen: Bedienfeld über das Spielfeld */
 @container (max-width: 760px) {
-  .gp { flex-direction: column; gap: 14px; }
-  .gp-panel { width: 100%; flex-direction: row; flex-wrap: wrap; justify-content: center; align-items: center; gap: 10px; }
+  .gp { flex-direction: column; gap: 12px; }
+  .gp-panel { width: 100%; flex-direction: row; flex-wrap: wrap; justify-content: center; align-items: center; gap: 8px; }
   .gp-label, .gp-hint { display: none; }
+  /* Punkte kompakt in einer Zeile – sonst wird das Bedienfeld auf kleinen Handys zu hoch fürs Spielfeld */
+  .gp-stats { flex: 1 1 100%; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); grid-template-columns: none; gap: 6px; }
+  .gp-stat { min-width: 0; padding: 5px 10px; }
+  .gp-stat span { font-size: 0.6rem; }
+  .gp-stat b { font-size: 1.1rem; }
+  .gp-panel > .btn { padding: 8px 16px; font-size: 0.9rem; }
 }
 
 /* ---------- Vier gewinnt ---------- */
@@ -804,9 +932,15 @@ section h2 { font-size: 1.3rem; font-weight: 900; margin: 32px 0 14px; }
 
 /* Schmaler Spielrahmen */
 @container (max-width: 760px) {
-  .c4-players { flex-direction: row; }
+  .c4-players { flex: 1 1 100%; flex-direction: row; gap: 8px; }
+  .c4-player { flex: 1; min-width: 0; gap: 8px; padding: 6px 10px; }
+  .c4-chip { width: 22px; height: 22px; }
+  .c4-player-text b, .c4-player-text small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .c4-player-text b { font-size: 0.9rem; }
+  .c4-player-text small { font-size: 0.7rem; }
+  .c4-score { font-size: 1.3rem; }
   .c4-player.is-turn { transform: none; }
-  .c4-stage { width: min(100cqi, 100cqh - 150px); }
+  .c4-stage { width: min(100cqi, 100cqh - 160px); }
 }
 
 /* ---------- Paare finden ---------- */
@@ -1059,10 +1193,39 @@ section h2 { font-size: 1.3rem; font-weight: 900; margin: 32px 0 14px; }
   .bf-center { --touch-h: 62px; }
   .bf-touch { display: flex; }
 }
+/* Schmal (Handy): Punkte oben, Spielfeld links, Halten/Nächstes/Knöpfe rechts daneben, Touch-Tasten unten */
 @container (max-width: 760px) {
-  .bf-well { height: min(100cqh - 250px - var(--touch-h), 100cqi * 2); }
-  .bf-side { order: -1; }
-  .bf-next { height: 72px; }
+  .gp.bf {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 96px;
+    grid-template-rows: auto auto auto auto auto 1fr auto;
+    grid-template-areas:
+      'stats stats'
+      'well  hold'
+      'well  next'
+      'well  new'
+      'well  pause'
+      'well  .'
+      'touch touch';
+    width: 100%;
+    align-content: center;
+    gap: 10px;
+  }
+  .bf .gp-panel, .bf-center { display: contents; }
+  .bf .gp-stats { grid-area: stats; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  .bf .gp-stat { min-width: 0; padding: 5px 8px; }
+  .bf .gp-stat span { font-size: 0.6rem; }
+  .bf .gp-stat b { font-size: 1.05rem; }
+  .bf .gp-panel:not(.bf-side) > .bf-box { grid-area: hold; }
+  .bf-side > .bf-box { grid-area: next; }
+  .bf .bf-box { padding: 8px; }
+  .bf-hold, .bf-next { width: 80px; height: 72px; }
+  .bf [data-new] { grid-area: new; }
+  .bf [data-pause] { grid-area: pause; }
+  .bf [data-new], .bf [data-pause] { width: 100%; padding: 8px 6px; font-size: 0.8rem; white-space: normal; }
+  .bf-well { grid-area: well; justify-self: center; height: min(100cqh - 70px - var(--touch-h), (100cqi - 106px) * 2); }
+  .bf-touch { grid-area: touch; justify-content: center; }
+  .bf-touch button { width: 48px; }
 }
 
 /* ---------- Watermelon Drop ---------- */
@@ -1096,7 +1259,8 @@ section h2 { font-size: 1.3rem; font-weight: 900; margin: 32px 0 14px; }
   .wm .gp-stats { grid-template-columns: auto auto; }
   .wm-box { padding: 4px 8px; }
   .wm-next { width: 40px; height: 40px; }
-  .wm .gp-panel .btn { padding: 6px 12px; font-size: 0.85rem; }
+  .wm .gp-stats { flex: none; }
+  .wm .gp-panel .btn { padding: 6px 10px; font-size: 0.8rem; }
 }
 
 /* ---------- Coins, Glücksrad, Shop und Erfolge ---------- */
@@ -1104,8 +1268,11 @@ section h2 { font-size: 1.3rem; font-weight: 900; margin: 32px 0 14px; }
 .btn--sm { padding: 7px 14px; font-size: 0.9rem; }
 
 .topnav { display: flex; gap: 4px; }
-.topnav[hidden], .account[hidden] { display: none; }
+.account[hidden], .topnav a[hidden] { display: none; }
 .topnav a {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
   padding: 8px 14px;
   border-radius: 999px;
   color: var(--muted);
@@ -1114,6 +1281,7 @@ section h2 { font-size: 1.3rem; font-weight: 900; margin: 32px 0 14px; }
 }
 .topnav a:hover { color: var(--navy); background: rgba(127, 127, 127, 0.12); }
 .topnav a.is-active { color: var(--navy); background: var(--card); }
+.topnav svg { flex: none; width: 18px; height: 18px; }
 
 .account { display: flex; align-items: center; gap: 10px; flex: none; }
 .icon-btn {
@@ -1158,7 +1326,8 @@ section h2 { font-size: 1.3rem; font-weight: 900; margin: 32px 0 14px; }
   display: flex;
   align-items: center;
   gap: 14px;
-  padding: 8px 16px;
+  height: 46px;
+  padding: 0 16px;
   border-radius: 999px;
   border: 2px solid var(--line);
   background: var(--card);
@@ -1175,7 +1344,7 @@ section h2 { font-size: 1.3rem; font-weight: 900; margin: 32px 0 14px; }
 .wallet-item, .reward, .price { display: inline-flex; align-items: center; gap: 6px; }
 .wallet svg, .reward svg, .price svg { width: 20px; height: 20px; flex: none; }
 
-.user-menu { position: relative; }
+.user-menu { position: relative; display: flex; }
 .avatar {
   width: 46px;
   height: 46px;
@@ -1351,7 +1520,10 @@ section h2 { font-size: 1.3rem; font-weight: 900; margin: 32px 0 14px; }
 
 /* Seiten Shop und Erfolge */
 .page { max-width: 1240px; margin: 0 auto; padding-top: 16px; }
-.page-head h1 { margin: 0; font-size: 2.4rem; font-weight: 900; }
+.page-head h1 { margin: 0; font-size: 2.4rem; font-weight: 900; overflow-wrap: break-word; hyphens: auto; }
+@media (max-width: 700px) {
+  .page-head h1 { font-size: 1.9rem; }
+}
 .page-head p { margin: 4px 0 0; color: var(--muted); font-size: 1.1rem; }
 .page-sub { margin: 30px 0 14px; font-size: 1.3rem; font-weight: 900; }
 .page-cta {
@@ -1367,7 +1539,8 @@ section h2 { font-size: 1.3rem; font-weight: 900; margin: 32px 0 14px; }
   font-weight: 800;
 }
 
-.shop-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 24px; }
+.shop-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(250px, 100%), 1fr)); gap: 24px; }
+.dropdown + .shop-grid { margin-top: 28px; }
 .shop-card {
   display: flex;
   flex-direction: column;
@@ -1384,7 +1557,7 @@ section h2 { font-size: 1.3rem; font-weight: 900; margin: 32px 0 14px; }
 .shop-note { color: var(--muted); font-weight: 700; }
 .btn.is-equipped { opacity: 1; border-color: #2f9e44; color: #2f9e44; box-shadow: 0 3px 0 #2f9e44; }
 
-.ach-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 16px; }
+.ach-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(330px, 100%), 1fr)); gap: 16px; }
 .ach {
   display: flex;
   align-items: center;
@@ -1418,15 +1591,119 @@ section h2 { font-size: 1.3rem; font-weight: 900; margin: 32px 0 14px; }
 .ach.is-epic .ach-bar span { background: #22b8cf; }
 .ach-reward { flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; font-weight: 900; }
 
+.show-sm, .theme-label, .menu-toggle, .menu-toggle .i-close { display: none; }
+
+/* Tablet und Handy: Navigation, Suche und Hell/Dunkel wandern in das ☰-Menü unter der Kopfzeile */
 @media (max-width: 900px) {
-  .topnav, .search { display: none; }
-  .wallet { gap: 10px; padding: 6px 12px; }
+  .topbar { flex-wrap: wrap; row-gap: 8px; }
+  .topnav, .search-wrap, .theme-toggle { display: none; }
+  .account { order: 1; margin-left: auto; }
+  .menu-toggle { order: 2; display: grid; }
+  .wallet { gap: 10px; padding: 0 12px; }
+
+  .topbar.is-open { max-height: 100dvh; overflow-y: auto; overscroll-behavior: contain; }
+  .topbar.is-open .menu-toggle .i-open { display: none; }
+  .topbar.is-open .menu-toggle .i-close { display: block; }
+  .topbar.is-open .search-wrap {
+    display: block;
+    order: 3;
+    flex: 0 0 100%;
+    max-width: none;
+    margin: 4px 0 0;
+    padding-top: 12px;
+    border-top: 2px solid var(--line);
+  }
+  .topbar.is-open .search-pop { position: static; margin-top: 8px; box-shadow: none; max-height: none; }
+  .topbar.is-open .topnav { display: flex; order: 4; flex: 0 0 100%; flex-direction: column; gap: 2px; }
+  .topbar.is-open .theme-toggle {
+    display: flex;
+    order: 5;
+    flex: 0 0 100%;
+    width: auto;
+    height: auto;
+    border: 0;
+    background: none;
+    color: var(--muted);
+    font: inherit;
+    font-weight: 800;
+  }
+  .topbar.is-open .theme-toggle:hover { color: var(--navy); background: rgba(127, 127, 127, 0.12); }
+  .topbar.is-open .topnav a, .topbar.is-open .theme-toggle { gap: 12px; padding: 12px 14px; border-radius: 12px; font-size: 1.05rem; }
+  .topbar.is-open .topnav svg, .topbar.is-open .theme-toggle svg { width: 20px; height: 20px; }
+  .topbar.is-open .theme-label { display: inline; }
+  /* Beim Tippen nur das Suchfeld zeigen, damit die Ergebnisse darunter sichtbar bleiben */
+  .topbar.is-open:has(.search:not(:placeholder-shown)) :is(.topnav, .theme-toggle) { display: none; }
 }
+@media (max-width: 700px) {
+  :root { --topbar-h: 70px; }
+}
+/* Handy: Kopfzeile muss angemeldet in 320px passen (Logo, Geschenk, Guthaben, Avatar, ☰) */
 @media (max-width: 520px) {
+  :root { --topbar-h: 62px; }
+  .topbar { column-gap: 6px; padding: 12px; }
+  .logo { font-size: 1.1rem; }
+  .logo span { padding: 0 7px; border-radius: 8px; }
   .account { gap: 6px; }
-  .account .btn--sm { padding: 6px 10px; font-size: 0.8rem; }
+  .icon-btn, .avatar { width: 38px; height: 38px; }
+  .icon-btn svg { width: 20px; height: 20px; }
+  .wallet { height: 38px; gap: 8px; padding: 0 10px; font-size: 0.9rem; }
+  .wallet-item { gap: 4px; }
+  .wallet svg { width: 16px; height: 16px; }
+  .account .btn--sm { padding: 6px 12px; font-size: 0.8rem; }
+  .hide-sm { display: none; }
+  .show-sm { display: inline; }
+  /* Profil wandert ins ☰-Menü (eigene Zeile mit Name und Abmelden), sonst passt die Kopfzeile nicht in 320px */
+  .account { display: contents; }
+  .account > * { order: 1; }
+  .account > :first-child { margin-left: auto; }
+  .user-menu { display: none; }
+  .topbar.is-open .user-menu {
+    display: flex;
+    order: 6;
+    flex: 0 0 100%;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px 0;
+    border-top: 2px solid var(--line);
+  }
+  .topbar.is-open .user-menu .avatar { pointer-events: none; }
+  .topbar.is-open .user-menu .menu, .topbar.is-open .user-menu .menu[hidden] {
+    position: static;
+    display: flex;
+    flex: 1;
+    flex-flow: row wrap;
+    align-items: center;
+    gap: 6px 10px;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    box-shadow: none;
+  }
+  .topbar.is-open .user-menu .menu a { display: none; }
+  .topbar.is-open .user-menu .menu-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .topbar.is-open .user-menu [data-logout] { padding: 7px 14px; border: 2px solid var(--line); border-radius: 999px; }
   .toasts { right: 12px; left: 12px; bottom: 12px; align-items: stretch; }
   .toast { max-width: none; }
+}
+@media (max-width: 400px) {
+  :root { --topbar-h: 58px; }
+  .topbar { padding: 10px; }
+  .logo { font-size: 1rem; }
+  .logo span { padding: 0 6px; }
+  .wallet { gap: 6px; padding: 0 8px; font-size: 0.85rem; }
+  .wallet svg { width: 14px; height: 14px; }
+  .wallet-item { gap: 3px; }
+  .modal { padding: 22px 18px; }
+}
+/* Sehr schmal (320px): Zurück-Knopf weglassen, damit der Spieltitel Platz hat (Logo führt zur Übersicht),
+   Kopfzeile noch etwas enger, damit auch fünfstellige Kontostände in eine Zeile passen */
+@media (max-width: 359px) {
+  :root { --topbar-h: 54px; }
+  .game-head .back { display: none; }
+  .topbar { column-gap: 4px; padding: 8px; }
+  .logo { font-size: 0.95rem; }
+  .wallet { gap: 5px; padding: 0 6px; font-size: 0.8rem; }
 }
 
 /* ---------- Spielmenü (vor jedem Spiel) ---------- */
@@ -1519,7 +1796,7 @@ section h2 { font-size: 1.3rem; font-weight: 900; margin: 32px 0 14px; }
 .gm-design-state svg { width: 16px; height: 16px; }
 .gm-design.is-locked canvas { filter: grayscale(0.85) brightness(0.75); }
 
-.gm-achievements { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+.gm-achievements { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr)); gap: 12px; }
 .gm-ach { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 14px; background: rgba(0, 0, 0, 0.22); }
 .gm-ach-icon {
   flex: none;
@@ -1548,3 +1825,33 @@ section h2 { font-size: 1.3rem; font-weight: 900; margin: 32px 0 14px; }
   .gm-hero { grid-template-columns: 1fr; }
   .gm-info h2 { font-size: 1.8rem; }
 }
+
+/* ---------- Footer, Impressum, Datenschutz ---------- */
+.site-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 24px;
+  max-width: 2400px;
+  margin: 0 auto;
+  padding: 22px 40px 28px;
+  border-top: 2px solid var(--line);
+  color: var(--muted);
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+.site-footer nav { display: flex; gap: 20px; }
+.site-footer a { color: var(--muted); text-decoration: none; }
+.site-footer a:hover { color: var(--navy); text-decoration: underline; }
+@media (max-width: 720px) {
+  .site-footer { justify-content: center; padding: 18px 16px 24px; }
+}
+
+.legal { max-width: 780px; line-height: 1.6; overflow-wrap: break-word; hyphens: auto; }
+.legal .page-head { margin: 12px 0 8px; }
+.legal h2 { margin: 28px 0 6px; font-size: 1.2rem; font-weight: 900; }
+.legal p { margin: 0 0 10px; }
+.legal a { color: inherit; }
+.legal mark { padding: 0 4px; border-radius: 4px; background: var(--yellow); color: var(--on-accent); }
+.legal-date { margin-top: 28px !important; color: var(--muted); }

@@ -3,6 +3,7 @@
 import * as eco from './economy.js';
 import { GAMES } from './games.js';
 import { drawPreview } from './designs.js';
+import { dropdown } from './ui.js';
 
 // ---------- Symbole ----------
 
@@ -140,7 +141,7 @@ function renderAccount() {
   const nav = document.getElementById('topnav');
   if (!box) return;
   box.hidden = false;
-  if (nav) nav.hidden = false;
+  nav?.querySelectorAll('[data-eco]').forEach((a) => (a.hidden = false));
   if (!eco.state.ready) {
     box.innerHTML = '';
     return;
@@ -151,7 +152,7 @@ function renderAccount() {
   const dot = available ? '<span class="dot" aria-label="Bonus verfügbar"></span>' : '';
   const wheel = `<button type="button" class="icon-btn wheel-btn ${available ? 'has-bonus' : ''}" data-open-wheel title="Täglicher Bonus" aria-label="Täglicher Bonus">${GIFT}${dot}</button>`;
   if (!u) {
-    box.innerHTML = `${wheel}<button type="button" class="btn btn--primary btn--sm" data-login>Mit Google anmelden</button>`;
+    box.innerHTML = `${wheel}<button type="button" class="btn btn--primary btn--sm" data-login><span class="hide-sm">Mit Google anmelden</span><span class="show-sm">Anmelden</span></button>`;
     shownCoins = null;
     return;
   }
@@ -489,7 +490,7 @@ export function renderShop(container) {
           <p>Designs für deine Spiele – bezahlt mit Coins oder Diamanten.</p>
         </div>
         ${eco.state.user ? '' : '<div class="page-cta">Melde dich an, um Coins zu sammeln und Designs zu kaufen. <button type="button" class="btn btn--primary btn--sm" data-login>Mit Google anmelden</button></div>'}
-        ${games.length > 1 ? `<nav class="chips">${games.map((g) => `<button class="chip ${g === activeGame ? 'chip--active' : ''}" data-shop-game="${g}">${esc(gameTitle(g))}</button>`).join('')}</nav>` : `<h2 class="page-sub">${esc(gameTitle(activeGame))}</h2>`}
+        ${games.length > 1 ? `<nav class="chips chips--collapse">${games.map((g) => `<button class="chip ${g === activeGame ? 'chip--active' : ''}" data-shop-game="${g}">${esc(gameTitle(g))}</button>`).join('')}</nav>${dropdown({ name: 'shop-game', options: games.map((g) => [g, esc(gameTitle(g))]), value: activeGame, ariaLabel: 'Spiel wählen' })}` : `<h2 class="page-sub">${esc(gameTitle(activeGame))}</h2>`}
         ${items.length ? '' : '<p class="empty">Der Shop ist gerade nicht erreichbar.</p>'}
         ${groups
           .map(
@@ -525,7 +526,15 @@ export function renderShop(container) {
     });
   };
 
+  // Dropdown statt Chips auf dem Handy
+  const onChange = (e) => {
+    if (e.detail.name !== 'shop-game') return;
+    activeGame = e.detail.value;
+    render();
+  };
+
   container.addEventListener('click', onClick);
+  container.addEventListener('dropdown-change', onChange);
   const off = eco.onChange((e) => e.type === 'state' && render());
   render();
   raf = requestAnimationFrame(animate);
@@ -533,6 +542,7 @@ export function renderShop(container) {
     off();
     cancelAnimationFrame(raf);
     container.removeEventListener('click', onClick);
+    container.removeEventListener('dropdown-change', onChange);
   };
 }
 
