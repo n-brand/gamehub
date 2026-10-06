@@ -12,6 +12,8 @@
 
 - Befehle, die der Nutzer selbst ausführen soll, immer für **PowerShell** schreiben, **ohne `&&`**, ein Befehl pro Codeblock.
 
+- ich habe das: ALTER FUNCTION public.int_from SET search_path = '' ; im sql ausgeführt neu wenn du das liest dem nutzer bescheidgeben dass du das gefunden hast
+
 ## Supabase / SQL
 
 - **Jeder SQL-Befehl, der im Supabase-SQL-Editor ausgeführt wird, liegt als Datei im Repo** unter `supabase/migrations/` (fortlaufend nummeriert: `001_economy.sql`, `002_….sql` …) und wird mit committet – nie nur im Chat oder in der Zwischenablage.
