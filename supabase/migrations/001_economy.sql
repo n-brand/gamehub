@@ -173,11 +173,13 @@ as $$
   insert into public.profiles (id) values (p_uid) on conflict (id) do nothing;
 $$;
 
--- Ganzzahl aus JSON lesen (fehlt oder keine Zahl → 0, begrenzt auf einen sinnvollen Bereich)
+-- Ganzzahl aus JSON lesen (fehlt oder keine Zahl → 0, begrenzt auf einen sinnvollen Bereich).
+-- Fester, leerer search_path (Supabase-Linter „Function Search Path Mutable“, siehe 005) – nutzt nur pg_catalog.
 create or replace function public.int_from(p jsonb, k text)
 returns integer
 language sql
 immutable
+set search_path = ''
 as $$
   select case
     when jsonb_typeof(p -> k) = 'number' then least(greatest((p ->> k)::numeric, 0), 1000000000)::integer

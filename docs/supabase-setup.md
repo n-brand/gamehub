@@ -38,8 +38,11 @@ Kataloge werden dabei aktualisiert, Spielerdaten bleiben erhalten.
 
 7. Danach [`supabase/migrations/004_new_skins.sql`](../supabase/migrations/004_new_skins.sql) ausführen (neue Shop-Designs).
 
-**Reihenfolge:** Immer `001`, `002`, `003`, dann `004`. Wer `001` erneut ausführt, führt danach auch `002`, `003`
-und `004` erneut aus.
+8. Danach [`supabase/migrations/005_int_from_search_path.sql`](../supabase/migrations/005_int_from_search_path.sql)
+   ausführen (fester `search_path` für eine Hilfsfunktion – behebt den Sicherheitshinweis „Function Search Path Mutable“).
+
+**Reihenfolge:** Immer `001`, `002`, `003`, `004`, dann `005`. Wer `001` erneut ausführt, führt danach auch `002`
+bis `005` erneut aus.
 Alle SQL-Befehle liegen im Repo unter `supabase/migrations/`.
 
 ### Shop-Werte selbst ändern (SQL Editor)

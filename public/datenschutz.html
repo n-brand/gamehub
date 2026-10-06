@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Datenschutzerklärung – GameHub</title>
+  <meta name="description" content="Datenschutzerklärung von GameHub: welche Daten beim Spielen und bei der Anmeldung mit Google verarbeitet werden, wofür und wie lange.">
+  <link rel="icon" href="thumbs/snake.svg">
+  <script>
+    // Gleiches Farbschema wie auf der Spieleseite (Standard: dunkel)
+    try {
+      if (localStorage.getItem('gamehub-theme') === 'light') document.documentElement.dataset.theme = 'light';
+    } catch {}
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;700;800;900&display=swap">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <!-- Eigene Seite ohne # (nicht in der Single-Page-App), damit Google und andere Prüfer sie direkt abrufen können.
+       Platzhalter in <mark> vor der Veröffentlichung mit echten Angaben füllen. -->
+  <header class="topbar">
+    <a href="./" class="logo">Game<span>Hub</span></a>
+  </header>
+  <main>
+    <section class="page legal">
+      <a href="./" class="back">← Zur Übersicht</a>
+      <div class="page-head"><h1>Datenschutz&shy;erklärung</h1></div>
+
+      <h2>1. Verantwortlicher</h2>
+      <p>
+        Nicolas Brand<br>
+        E-Mail: <mark>[E-Mail-Adresse]</mark><br>
+        Anschrift: siehe <a href="./#/impressum">Impressum</a>
+      </p>
+
+      <h2>2. Überblick</h2>
+      <p>GameHub (<a href="https://n-brand.github.io/gamehub/">n-brand.github.io/gamehub</a>) ist eine private, nicht kommerzielle Spieleseite. Alle Spiele lassen sich ohne Anmeldung spielen. Es gibt keine Werbung, kein Tracking und keine Analyse-Werkzeuge. Personenbezogene Daten werden nur verarbeitet, soweit es für den Betrieb der Seite und – wenn du dich anmeldest – für dein Spielerkonto (Coins, Glücksrad, Erfolge und Shop) nötig ist.</p>
+
+      <h2>3. Hosting (GitHub Pages)</h2>
+      <p>Die Seite wird über GitHub Pages bereitgestellt (GitHub Inc., 88 Colin P. Kelly Jr. St., San Francisco, CA 94107, USA). Beim Aufruf verarbeitet GitHub technisch notwendige Daten wie IP-Adresse, Zeitpunkt, aufgerufene Datei und Browser-Kennung, um die Seite auszuliefern und vor Missbrauch zu schützen. Rechtsgrundlage ist Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse an einer sicheren Auslieferung). GitHub ist unter dem EU-US Data Privacy Framework zertifiziert.</p>
+
+      <h2>4. Schriftart und Programmbibliothek</h2>
+      <p>Die Schrift „Nunito“ wird von Google Fonts geladen (Google Ireland Limited, Gordon House, Barrow Street, Dublin 4, Irland). Dabei wird deine IP-Adresse an Google übertragen. Für die Anmeldung wird die Programmbibliothek supabase-js über das Content-Delivery-Netzwerk jsDelivr geladen; auch dabei wird die IP-Adresse an den Anbieter übermittelt. Rechtsgrundlage ist Art. 6 Abs. 1 lit. f DSGVO (einheitliche Darstellung und zuverlässige Auslieferung).</p>
+
+      <h2>5. Speicherung im Browser</h2>
+      <p>GameHub setzt keine Cookies. Im Speicher deines Browsers (localStorage) werden abgelegt: Favoriten, zuletzt gespielte Spiele, lokale Rekorde und Spielstände, gewählte Level, das Farbschema (hell/dunkel) sowie – wenn du angemeldet bist – die Anmelde-Sitzung. Diese Daten verlassen deinen Browser nicht (außer der Sitzung, die bei Anfragen an Supabase mitgeschickt wird) und lassen sich über die Browser-Einstellungen jederzeit löschen. Rechtsgrundlage ist § 25 Abs. 2 Nr. 2 TDDDG, da die Speicherung für die von dir gewünschten Funktionen unbedingt erforderlich ist.</p>
+
+      <h2>6. Anmeldung mit Google</h2>
+      <p>Die Anmeldung ist freiwillig. Wenn du „Mit Google anmelden“ wählst, wirst du zu Google weitergeleitet und bestätigst dort die Anmeldung. GameHub fragt dabei nur die Basis-Berechtigungen „openid“, „email“ und „profile“ an. Google übermittelt uns danach:</p>
+      <ul>
+        <li>deinen Namen,</li>
+        <li>deine E-Mail-Adresse,</li>
+        <li>dein Profilbild (als Bild-Adresse),</li>
+        <li>eine Kennung deines Google-Kontos.</li>
+      </ul>
+      <p>Dein Passwort erhalten wir nicht, und auf weitere Inhalte deines Google-Kontos (z. B. Kontakte, E-Mails, Dateien) haben wir keinen Zugriff.</p>
+      <p><strong>Wofür:</strong> Diese Angaben werden ausschließlich für dein Spielerkonto verwendet – um dich anzumelden, deinen Namen und dein Profilbild in der Kopfzeile und im Inventar anzuzeigen und dir Kontostand, Erfolge und Designs zuzuordnen. Deine E-Mail-Adresse wird anderen nicht angezeigt und nicht für Werbung oder Newsletter genutzt.</p>
+      <p><strong>Keine Weitergabe:</strong> Wir verkaufen diese Daten nicht, geben sie nicht an Dritte weiter (abgesehen von Supabase als Auftragsverarbeiter, siehe Abschnitt 7) und nutzen sie nicht für Werbung. Die Nutzung und Weitergabe von Informationen, die wir über Google-APIs erhalten, entspricht der <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noopener">Google API Services User Data Policy</a>, einschließlich der Anforderungen zur eingeschränkten Nutzung (Limited Use).</p>
+      <p><strong>Widerruf:</strong> Du kannst den Zugriff von GameHub auf dein Google-Konto jederzeit in deinem Google-Konto unter <a href="https://myaccount.google.com/connections" target="_blank" rel="noopener">myaccount.google.com/connections</a> entfernen.</p>
+      <p>Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO (Bereitstellung des Spielerkontos). Für die Verarbeitung bei Google gilt die Datenschutzerklärung von Google: <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">policies.google.com/privacy</a>.</p>
+
+      <h2>7. Spielerkonto (Supabase)</h2>
+      <p>Für angemeldete Spieler werden Daten bei Supabase gespeichert (Supabase Inc., 970 Toa Payoh North #07-04, Singapur 318992; Rechenzentrum in der EU). Gespeichert werden: die Angaben aus der Google-Anmeldung, Kontostand (Coins, Diamanten), Glücksrad-Serie, Spielstatistiken (Anzahl Runden, Siege, Bestwerte), freigeschaltete Erfolge sowie gekaufte und ausgerüstete Designs. Die Übertragung ist verschlüsselt. Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO. Mit Supabase besteht ein Vertrag zur Auftragsverarbeitung.</p>
+      <p><strong>Speicherdauer und Löschung:</strong> Die Daten werden gespeichert, solange dein Konto besteht. Wenn du dein Konto löschen lassen möchtest, schreib eine E-Mail an die oben genannte Adresse – am besten von der E-Mail-Adresse deines Google-Kontos. Das Konto wird dann mit allen gespeicherten Daten innerhalb von 30 Tagen gelöscht.</p>
+
+      <h2>8. Deine Rechte</h2>
+      <p>Du hast das Recht auf Auskunft (Art. 15 DSGVO), Berichtigung (Art. 16), Löschung (Art. 17), Einschränkung der Verarbeitung (Art. 18), Datenübertragbarkeit (Art. 20) und Widerspruch gegen Verarbeitungen auf Grundlage berechtigter Interessen (Art. 21). Schreib dafür einfach eine E-Mail an die oben genannte Adresse. Außerdem kannst du dich bei einer Datenschutz-Aufsichtsbehörde beschweren, etwa bei der Behörde deines Wohnorts.</p>
+
+      <h2>9. Änderungen</h2>
+      <p>Wenn sich GameHub ändert (z. B. neue Funktionen), wird diese Datenschutzerklärung angepasst. Es gilt die jeweils hier veröffentlichte Fassung.</p>
+
+      <p class="legal-date">Stand: Oktober 2026</p>
+    </section>
+  </main>
+  <footer class="site-footer">
+    <span>© 2026 Nicolas Brand</span>
+    <nav>
+      <a href="datenschutz.html" aria-current="page">Datenschutz</a>
+      <a href="./#/impressum">Impressum</a>
+    </nav>
+  </footer>
+</body>
+</html>

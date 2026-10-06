@@ -375,8 +375,12 @@ function route() {
     if (location.hash !== '#/inventar') history.replaceState(null, '', `${location.pathname}${location.search}#/inventar`);
     cleanupGame = renderInventory(app, { focus });
     nav = '#/inventar';
-  } else if (location.hash === '#/impressum' || location.hash === '#/datenschutz') {
-    renderLegal(app, location.hash.slice(2));
+  } else if (location.hash === '#/datenschutz') {
+    // Die Datenschutzerklärung ist eine eigene Seite ohne # (Google muss sie direkt abrufen können)
+    location.replace('datenschutz.html');
+    return;
+  } else if (location.hash === '#/impressum') {
+    renderLegal(app, 'impressum');
     nav = null;
   } else {
     renderOverview();
