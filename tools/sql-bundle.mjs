@@ -36,14 +36,25 @@ do $$
 declare
   v_tables integer;
   v_players integer;
-  v_public integer;
+  v_left text := '';
+  v_other text;
+  r record;
+  n bigint;
 begin
   select count(*) into v_tables from pg_tables where schemaname = 'gamehub';
   select count(*) into v_players from gamehub.profiles;
-  select count(*) into v_public from pg_tables where schemaname = 'public'
-   and tablename in ('profiles', 'shop_items', 'reward_rules', 'creator_codes');
-  raise exception 'PROBELAUF OK – nichts gespeichert. Tabellen in gamehub: %, Spieler: %, GameHub-Tabellen noch in public: %',
-    v_tables, v_players, v_public;
+  -- Was liegt nach dem Umzug noch in public (mit Zeilenzahl)? GameHub-Namen werden markiert.
+  for r in select tablename from pg_tables where schemaname = 'public' order by tablename loop
+    execute format('select count(*) from public.%I', r.tablename) into n;
+    v_left := v_left || r.tablename || ' (' || n || ' Zeilen'
+      || case when r.tablename in ('profiles', 'game_stats', 'reward_rules', 'wheel_segments', 'achievements',
+           'user_achievements', 'shop_items', 'inventory', 'equipped', 'shop_settings', 'exchange_packages',
+           'creator_codes', 'code_redemptions') then ', GameHub-Name!' else '' end || '), ';
+  end loop;
+  select string_agg(nspname, ', ' order by nspname) into v_other from pg_namespace
+   where nspname not like 'pg\\_%' and nspname not in ('information_schema', 'public', 'gamehub');
+  raise exception E'PROBELAUF OK – nichts gespeichert.\\nTabellen in gamehub: %, Spieler: %\\nNoch in public: %\\nAndere Schemas: %',
+    v_tables, v_players, coalesce(nullif(v_left, ''), 'nichts'), v_other;
 end;
 $$;
 `
