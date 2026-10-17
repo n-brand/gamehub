@@ -7,9 +7,8 @@
 -- (security definer), die Beträge selbst berechnen und Eingaben prüfen.
 --
 -- Die Datenbank wird von mehreren Projekten genutzt: Alles von GameHub liegt im Schema "gamehub"
--- (nicht in "public"). Das Schema muss in Supabase unter den Data-API-Einstellungen bei
--- "Exposed schemas" eingetragen sein, sonst erreicht die Webseite es nicht.
--- Übersicht der Tabellen: docs/datenbank.md
+-- (nicht in "public"). Rechte, Beschreibungen und das Neuladen der API stehen in 999_gamehub_schema.sql.
+-- Übersicht der Tabellen: docs/datenbank.md. Alle Migrationen auf einmal: node tools/sql-bundle.mjs
 
 create schema if not exists gamehub;
 comment on schema gamehub is 'GameHub (github.com/n-brand/gamehub): Coins, Glücksrad, Erfolge, Shop';
@@ -182,11 +181,13 @@ as $$
   insert into gamehub.profiles (id) values (p_uid) on conflict (id) do nothing;
 $$;
 
--- Ganzzahl aus JSON lesen (fehlt oder keine Zahl → 0, begrenzt auf einen sinnvollen Bereich)
+-- Ganzzahl aus JSON lesen (fehlt oder keine Zahl → 0, begrenzt auf einen sinnvollen Bereich).
+-- Fester, leerer search_path (Supabase-Linter „Function Search Path Mutable“, siehe 005) – nutzt nur pg_catalog.
 create or replace function gamehub.int_from(p jsonb, k text)
 returns integer
 language sql
 immutable
+set search_path = ''
 as $$
   select case
     when jsonb_typeof(p -> k) = 'number' then least(greatest((p ->> k)::numeric, 0), 1000000000)::integer
@@ -568,14 +569,8 @@ begin
 end;
 $$;
 
--- ---------- Zugriffsrechte ----------
--- Tabellen: nur Lesen (welche Zeilen, regeln die Policies oben). Im Schema "public" vergibt Supabase
--- das automatisch, in einem eigenen Schema muss es hier stehen.
-revoke all on all tables in schema gamehub from anon, authenticated;
-grant select on all tables in schema gamehub to anon, authenticated;
-
+-- ---------- Ausführungsrechte ----------
 -- Interne Hilfsfunktionen sind für Clients gesperrt, die vier Seiten-Funktionen nur für Angemeldete.
--- (handle_new_user bleibt unangetastet: der Login-Dienst von Supabase führt den Trigger aus.)
 
 revoke execute on function gamehub.ensure_profile(uuid) from public, anon, authenticated;
 revoke execute on function gamehub.achievement_value(uuid, text, text) from public, anon, authenticated;
@@ -589,31 +584,6 @@ grant execute on function gamehub.report_result(text, text, text, integer, integ
 grant execute on function gamehub.claim_daily_spin() to authenticated;
 grant execute on function gamehub.buy_item(text) to authenticated;
 grant execute on function gamehub.equip_item(text) to authenticated;
-
--- ---------- Beschreibungen (erscheinen in Supabase Studio bei Tabellen und Spalten) ----------
-
-comment on table gamehub.profiles is 'Kontostand pro Spieler (1 Zeile pro Login). Nur über Server-Funktionen änderbar.';
-comment on column gamehub.profiles.coins is 'Normale Währung';
-comment on column gamehub.profiles.diamonds is 'Premium-Währung (selten: Glücksrad, große Erfolge)';
-comment on column gamehub.profiles.spin_streak is 'Tage in Folge am Glücksrad gedreht';
-comment on column gamehub.profiles.last_spin is 'Letzter Dreh (Kalendertag, deutsche Zeit)';
-
-comment on table gamehub.game_stats is 'Statistik pro Spieler und Spiel, geschrieben von report_result';
-comment on column gamehub.game_stats.data is 'Spielspezifische Werte: wins_<stufe>, max_tile, max_level, quads, perfect30, max_fruit';
-comment on column gamehub.game_stats.last_report is 'Zeit der letzten gewerteten Runde (Plausibilitätsprüfung)';
-
-comment on table gamehub.reward_rules is 'Katalog: Coins pro Runde. difficulty '''' gilt für alle Stufen.';
-comment on column gamehub.reward_rules.per_points is 'Bei result=score: 1 Coin pro so viele Punkte';
-comment on column gamehub.reward_rules.min_seconds is 'Kürzere Runden werden nicht gewertet';
-comment on column gamehub.reward_rules.max_rate is 'Mehr Punkte pro Sekunde werden nicht gewertet';
-
-comment on table gamehub.wheel_segments is 'Katalog: Felder des Glücksrads mit Gewicht (Wahrscheinlichkeit)';
-comment on table gamehub.achievements is 'Katalog: Erfolge. game null = allgemein; stat = welcher Wert zählt';
-comment on table gamehub.user_achievements is 'Freigeschaltete Erfolge pro Spieler';
-comment on table gamehub.shop_items is 'Katalog: Shop-Designs. Aussehen im Code (designs.js), hier Preis und Slot';
-comment on column gamehub.shop_items.slot is 'Wo der Artikel ausgerüstet wird, z. B. snake, cubejump-skin, watermelon';
-comment on table gamehub.inventory is 'Gekaufte Shop-Artikel pro Spieler';
-comment on table gamehub.equipped is 'Ausgerüsteter Artikel pro Spieler und Slot';
 
 -- ---------- Kataloge (Startwerte, beim erneuten Ausführen aktualisiert) ----------
 

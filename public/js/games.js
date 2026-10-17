@@ -30,7 +30,6 @@ export const GAMES = [
     controls: 'Pfeiltasten oder WASD zum Schieben. Auf dem Handy: wischen. Dein Spielstand wird automatisch gespeichert.',
     theme: { bg: '#ffd43b', edge: '#f08c00', ink: '#5c3c00' },
     badge: 'NEU',
-    featured: true,
     available: true,
   },
   {
@@ -49,7 +48,6 @@ export const GAMES = [
       { id: 'duo', name: 'Zu zweit', sub: 'An einem Gerät', color: '#4c6ef5' },
     ],
     badge: 'NEU',
-    featured: true,
     available: true,
   },
   {
@@ -70,7 +68,6 @@ export const GAMES = [
       { id: 'cubejump-skin', label: 'Würfel' },
     ],
     badge: 'NEU',
-    featured: true,
     available: true,
   },
   {
@@ -83,7 +80,6 @@ export const GAMES = [
     theme: { bg: '#40c057', edge: '#2b8a3e', ink: '#ffffff' },
     slots: [{ id: 'watermelon', label: 'Design' }],
     badge: 'NEU',
-    featured: true,
     available: true,
   },
   {

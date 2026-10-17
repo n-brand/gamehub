@@ -1,11 +1,17 @@
 // Demo-Backend für ?demo=1: ahmt die Supabase-Schnittstelle im Browser nach (Daten in localStorage),
 // damit sich Coins, Glücksrad, Erfolge und Shop ohne eigenes Supabase-Projekt ausprobieren lassen.
-// Die Regeln entsprechen vereinfacht supabase/migrations/001_economy.sql – Kataloge bei Änderungen dort
-// hier mitziehen. Nur zum Testen gedacht: alles liegt im Browser und ist frei veränderbar.
+// Die Regeln entsprechen vereinfacht supabase/migrations/001_economy.sql und 002_shop.sql – Kataloge bei
+// Änderungen dort hier mitziehen (geprüft von tools/check-shop.mjs). Nur zum Testen gedacht: alles liegt im
+// Browser und ist frei veränderbar.
+
+import { isFreeItem, priceOf, packageCoins } from './pricing.js';
 
 const KEY = 'gamehub-demo-db';
 const USER = { id: 'demo-user', email: 'demo@gamehub.local', user_metadata: { full_name: 'Demo-Spieler' } };
 const FACTORS = [1.0, 1.2, 1.4, 1.5, 1.6, 1.8, 2.0];
+
+// Hervorhebung im Shop (gelber Rand + Schild), wie shop_items.highlight in 002_shop.sql
+const HIGHLIGHTS = { 'snake-neon': 'Beliebt' };
 
 const CATALOG = {
   reward_rules: [
@@ -90,8 +96,41 @@ const CATALOG = {
     ['watermelon-night', 'watermelon', 'watermelon', 'Mitternacht', 400, 0, 310],
     ['watermelon-balls', 'watermelon', 'watermelon', 'Bälle', 700, 0, 320],
     ['watermelon-planets', 'watermelon', 'watermelon', 'Planeten', 0, 8, 330],
-  ].map(([id, game, slot, name, price_coins, price_diamonds, sort]) => ({ id, game, slot, name, price_coins, price_diamonds, sort })),
+    // Neu (004_new_skins.sql)
+    ['snake-tiger', 'snake', 'snake', 'Tiger', 500, 0, 52],
+    ['snake-lava', 'snake', 'snake', 'Lava', 0, 6, 54],
+    ['cubejump-desert', 'cubejump', 'cubejump-theme', 'Wüste', 500, 0, 152],
+    ['cubejump-synth', 'cubejump', 'cubejump-theme', 'Synthwave', 900, 0, 154],
+    ['cube-pirate', 'cubejump', 'cubejump-skin', 'Pirat', 600, 0, 272],
+    ['cube-alien', 'cubejump', 'cubejump-skin', 'Alien', 0, 6, 274],
+    ['cube-cat', 'cubejump', 'cubejump-skin', 'Katze', 400, 0, 276],
+    ['cube-panda', 'cubejump', 'cubejump-skin', 'Panda', 600, 0, 277],
+    ['cube-pumpkin', 'cubejump', 'cubejump-skin', 'Kürbis', 500, 0, 278],
+    ['cube-magma', 'cubejump', 'cubejump-skin', 'Magma', 0, 7, 279],
+    // Exklusiv: nur per Creator-Code, nie im Shop
+    ['snake-galaxy', 'snake', 'snake', 'Galaxie', 0, 0, 60, true],
+    ['cubejump-galaxy', 'cubejump', 'cubejump-theme', 'Galaxie', 0, 0, 160, true],
+    ['cube-galaxy', 'cubejump', 'cubejump-skin', 'Galaxie', 0, 0, 280, true],
+  ].map(([id, game, slot, name, price_coins, price_diamonds, sort, exclusive = false]) => ({
+    id, game, slot, name, price_coins, price_diamonds, sort, exclusive, sale_percent: 0, sale_until: null,
+    highlight: HIGHLIGHTS[id] ?? null,
+  })),
+  shop_settings: [{ key: 'diamond_coin_rate', value: 150 }],
+  exchange_packages: [
+    ['p1', 1, 0, 10],
+    ['p5', 5, 10, 20],
+    ['p10', 10, 20, 30],
+    ['p25', 25, 30, 40],
+  ].map(([id, diamonds, bonus_percent, sort]) => ({ id, diamonds, bonus_percent, sort })),
+  // Für Spieler nicht lesbar (wie in Supabase) – nur redeem_code greift darauf zu
+  creator_codes: [
+    { code: 'GAMEHUB', coins: 300, diamonds: 0, items: ['snake-galaxy', 'cubejump-galaxy', 'cube-galaxy'], active: true, expires_at: null, max_uses: null, uses: 0 },
+  ],
 };
+const PRIVATE_TABLES = new Set(['creator_codes']);
+
+// Für tools/check-shop.mjs (Testfälle wie Rabatte oder abgelaufene Codes)
+export const DEMO_CATALOG = CATALOG;
 
 const today = (offset = 0) =>
   new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Berlin' }).format(new Date(Date.now() + offset * 864e5));
@@ -103,12 +142,14 @@ const freshDb = () => ({
   inventory: [],
   equipped: {},
   user_achievements: [],
+  code_redemptions: [],
 });
 
 function load() {
   try {
     const db = JSON.parse(localStorage.getItem(KEY));
-    if (db) return db;
+    // Ältere Demo-Daten um neue Felder ergänzen
+    if (db) return { ...freshDb(), ...db };
   } catch {
     // kaputte oder fehlende Daten → neu anfangen
   }
@@ -130,7 +171,7 @@ export function createDemoClient({ ownAll = false } = {}) {
   // Alle Designs besitzen und reichlich Guthaben haben
   const unlockAll = () => {
     db.loggedIn = true;
-    db.inventory = CATALOG.shop_items.filter((i) => i.price_coins || i.price_diamonds).map((i) => i.id);
+    db.inventory = CATALOG.shop_items.filter((i) => !isFreeItem(i)).map((i) => i.id);
     db.profile.coins = Math.max(db.profile.coins, 99999);
     db.profile.diamonds = Math.max(db.profile.diamonds, 999);
     save();
@@ -138,6 +179,7 @@ export function createDemoClient({ ownAll = false } = {}) {
   if (ownAll) unlockAll();
 
   const tableRows = (table) => {
+    if (PRIVATE_TABLES.has(table)) return [];
     if (CATALOG[table]) return CATALOG[table];
     if (!db.loggedIn) return [];
     switch (table) {
@@ -151,6 +193,8 @@ export function createDemoClient({ ownAll = false } = {}) {
         return db.user_achievements;
       case 'game_stats':
         return Object.entries(db.game_stats).map(([game, s]) => ({ game, ...s }));
+      case 'code_redemptions':
+        return db.code_redemptions;
       default:
         return [];
     }
@@ -197,15 +241,16 @@ export function createDemoClient({ ownAll = false } = {}) {
     return int(s.data[a.stat]);
   }
 
+  // Neu erreichte Erfolge freischalten. Die Belohnung wird NICHT sofort gutgeschrieben, sondern wartet
+  // als abholbar (reward_pending), bis der Spieler sie im Inventar abholt (claim_achievement).
   function checkAchievements() {
     const fresh = [];
     for (const a of CATALOG.achievements) {
       if (db.user_achievements.some((u) => u.achievement_id === a.id)) continue;
       if (statValue(a) >= a.threshold) {
-        db.user_achievements.push({ achievement_id: a.id, unlocked_at: new Date().toISOString() });
-        db.profile.coins += a.reward_coins;
-        db.profile.diamonds += a.reward_diamonds;
-        fresh.push({ id: a.id, name: a.name, coins: a.reward_coins, diamonds: a.reward_diamonds });
+        const pending = a.reward_coins > 0 || a.reward_diamonds > 0;
+        db.user_achievements.push({ achievement_id: a.id, unlocked_at: new Date().toISOString(), reward_pending: pending, claimed_at: null });
+        fresh.push({ id: a.id, name: a.name, coins: a.reward_coins, diamonds: a.reward_diamonds, pending });
       }
     }
     return fresh;
@@ -274,27 +319,80 @@ export function createDemoClient({ ownAll = false } = {}) {
       };
     },
 
-    buy_item({ p_item }) {
+    // Kaufen zum aktuellen Preis (mit Rabatt). p_coins/p_diamonds = Preis, den der Spieler gesehen hat:
+    // weicht er ab (Rabatt gerade abgelaufen), wird nichts abgebucht.
+    buy_item({ p_item, p_coins = null, p_diamonds = null }) {
       const item = CATALOG.shop_items.find((i) => i.id === p_item);
       if (!item) return fail('Unbekannter Artikel');
+      if (item.exclusive) return fail('Dieses Design gibt es nur per Creator-Code.');
       const p = db.profile;
-      const free = !item.price_coins && !item.price_diamonds;
-      if (!free && !db.inventory.includes(p_item)) {
-        if (p.coins < item.price_coins || p.diamonds < item.price_diamonds) return fail('Nicht genug Guthaben');
-        p.coins -= item.price_coins;
-        p.diamonds -= item.price_diamonds;
-        db.inventory.push(p_item);
+      const price = priceOf(item);
+      if (isFreeItem(item) || db.inventory.includes(p_item)) {
+        return { data: { owned: true, coins: p.coins, diamonds: p.diamonds }, error: null };
       }
-      return { data: { owned: true, coins: p.coins, diamonds: p.diamonds }, error: null };
+      if (p_coins != null && (p_coins !== price.coins || p_diamonds !== price.diamonds)) return fail('Der Preis hat sich geändert.');
+      if (p.coins < price.coins || p.diamonds < price.diamonds) return fail('Nicht genug Guthaben');
+      p.coins -= price.coins;
+      p.diamonds -= price.diamonds;
+      db.inventory.push(p_item);
+      return { data: { owned: true, coins: p.coins, diamonds: p.diamonds, paid_coins: price.coins, paid_diamonds: price.diamonds }, error: null };
     },
 
     equip_item({ p_item }) {
       const item = CATALOG.shop_items.find((i) => i.id === p_item);
       if (!item) return fail('Unbekannter Artikel');
-      const free = !item.price_coins && !item.price_diamonds;
-      if (!free && !db.inventory.includes(p_item)) return fail('Artikel nicht im Besitz');
+      if (!isFreeItem(item) && !db.inventory.includes(p_item)) return fail('Artikel nicht im Besitz');
       db.equipped[item.slot] = p_item;
       return { data: { slot: item.slot, item: p_item }, error: null };
+    },
+
+    // Diamanten in Coins tauschen – nur ganze Pakete, Coins rechnet der Server
+    exchange_diamonds({ p_package }) {
+      const pkg = CATALOG.exchange_packages.find((x) => x.id === p_package);
+      if (!pkg) return fail('Unbekanntes Paket');
+      const p = db.profile;
+      if (p.diamonds < pkg.diamonds) return fail('Nicht genug Diamanten');
+      const rate = CATALOG.shop_settings.find((s) => s.key === 'diamond_coin_rate')?.value ?? 150;
+      const coins = packageCoins(pkg, rate);
+      p.diamonds -= pkg.diamonds;
+      p.coins += coins;
+      return { data: { coins_gained: coins, diamonds_spent: pkg.diamonds, coins: p.coins, diamonds: p.diamonds }, error: null };
+    },
+
+    // Creator-Code einlösen: pro Spieler einmal, optional mit Ablaufdatum und Höchstzahl
+    redeem_code({ p_code = '' }) {
+      const code = String(p_code).trim().toUpperCase();
+      const entry = CATALOG.creator_codes.find((c) => c.code === code && c.active);
+      if (!entry) return fail('Diesen Code gibt es nicht.');
+      if (entry.expires_at && Date.parse(entry.expires_at) <= Date.now()) return fail('Dieser Code ist abgelaufen.');
+      if (db.code_redemptions.some((r) => r.code === code)) return fail('Diesen Code hast du schon eingelöst.');
+      if (entry.max_uses != null && entry.uses >= entry.max_uses) return fail('Dieser Code wurde schon zu oft eingelöst.');
+      db.code_redemptions.push({ code, redeemed_at: new Date().toISOString() });
+      entry.uses++;
+      const items = entry.items.filter((id) => CATALOG.shop_items.some((i) => i.id === id));
+      const fresh = items.filter((id) => !db.inventory.includes(id));
+      db.inventory.push(...fresh);
+      const p = db.profile;
+      p.coins += entry.coins;
+      p.diamonds += entry.diamonds;
+      return {
+        data: { code, items, new_items: fresh, coins_gained: entry.coins, diamonds_gained: entry.diamonds, coins: p.coins, diamonds: p.diamonds },
+        error: null,
+      };
+    },
+
+    // Belohnung eines freigeschalteten Erfolgs abholen (genau einmal)
+    claim_achievement({ p_achievement }) {
+      const row = db.user_achievements.find((u) => u.achievement_id === p_achievement);
+      if (!row) return fail('Diesen Erfolg hast du noch nicht freigeschaltet.');
+      if (!row.reward_pending) return fail('Diese Belohnung hast du schon abgeholt.');
+      const a = CATALOG.achievements.find((x) => x.id === p_achievement);
+      const p = db.profile;
+      p.coins += a?.reward_coins || 0;
+      p.diamonds += a?.reward_diamonds || 0;
+      row.reward_pending = false;
+      row.claimed_at = new Date().toISOString();
+      return { data: { id: p_achievement, coins_gained: a?.reward_coins || 0, diamonds_gained: a?.reward_diamonds || 0, coins: p.coins, diamonds: p.diamonds }, error: null };
     },
 
     // Nur im Demo-Modus: alles freischalten bzw. von vorn beginnen (angemeldet bleiben)

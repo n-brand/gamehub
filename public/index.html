@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>GameHub</title>
   <link rel="icon" href="thumbs/snake.svg">
+  <!-- Volle Adresse der Datenschutzerklärung (so ist sie auch im Google-OAuth-Zustimmungsbildschirm eingetragen) -->
+  <link rel="privacy-policy" href="https://n-brand.github.io/gamehub/datenschutz.html">
   <script>
     // Theme vor dem ersten Zeichnen setzen (kein Aufblitzen). Standard: dark.
     try {
@@ -17,17 +19,44 @@
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-  <header class="topbar">
+  <header class="topbar" id="topbar">
     <a href="#/" class="logo">Game<span>Hub</span></a>
-    <nav class="topnav" id="topnav" hidden>
-      <a href="#/shop" data-nav>Shop</a>
-      <a href="#/erfolge" data-nav>Erfolge</a>
+    <nav class="topnav" id="topnav">
+      <a href="#/" data-nav>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="M7 6h10a5 5 0 0 1 4.9 4l.9 4.6a3 3 0 0 1-5.3 2.5L15.6 15H8.4l-1.9 2.1a3 3 0 0 1-5.3-2.5L2.1 10A5 5 0 0 1 7 6Zm.5 3.2a.9.9 0 0 0-.9.9v1.1H5.5a.9.9 0 0 0 0 1.8h1.1v1.1a.9.9 0 0 0 1.8 0V13h1.1a.9.9 0 0 0 0-1.8H8.4v-1.1a.9.9 0 0 0-.9-.9Zm8.2.2a1.1 1.1 0 1 0 0 2.2 1.1 1.1 0 0 0 0-2.2Zm2 2.6a1.1 1.1 0 1 0 0 2.2 1.1 1.1 0 0 0 0-2.2Z"/></svg>
+        Games
+      </a>
+      <!-- Shop und Inventar nur mit Wirtschaft (Supabase oder ?demo=1), eingeblendet von ui-economy.js -->
+      <a href="#/shop" data-nav data-eco hidden>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M8 6V5.5a4 4 0 0 1 8 0V6h1.5a1.5 1.5 0 0 1 1.5 1.4l.6 9.4a2 2 0 0 1-2 2.2H6.4a2 2 0 0 1-2-2.2l.6-9.4A1.5 1.5 0 0 1 6.5 6Zm2 0h4v-.5a2 2 0 0 0-4 0Z"/></svg>
+        Shop
+      </a>
+      <a href="#/inventar" data-nav data-eco hidden>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="M4.5 2.5h15A1.5 1.5 0 0 1 21 4v3H3V4a1.5 1.5 0 0 1 1.5-1.5ZM4 8.5h16V18a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Zm6 2v2.5h4v-2.5Z"/></svg>
+        Inventar
+      </a>
     </nav>
-    <input id="search" class="search" type="search" placeholder="Spiele suchen …" autocomplete="off">
+    <div class="search-wrap">
+      <input id="search" class="search" type="search" placeholder="Spiele suchen …" autocomplete="off" aria-controls="search-pop">
+      <div class="search-pop" id="search-pop" hidden></div>
+    </div>
     <div class="account" id="account" hidden></div>
     <button id="theme-toggle" class="theme-toggle" type="button"></button>
+    <!-- Nur auf dem Handy: klappt Suche, Navigation und Hell/Dunkel als Menü unter der Kopfzeile auf -->
+    <button id="menu-toggle" class="icon-btn menu-toggle" type="button" aria-expanded="false" aria-controls="topbar" aria-label="Menü öffnen">
+      <svg class="i-open" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
+      <svg class="i-close" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
+    </button>
   </header>
   <main id="app"></main>
+  <footer class="site-footer">
+    <span>© 2026 Nicolas Brand</span>
+    <nav>
+      <a href="datenschutz.html">Datenschutz</a>
+      <a href="nutzungsbedingungen.html">Nutzungsbedingungen</a>
+      <a href="#/impressum">Impressum</a>
+    </nav>
+  </footer>
   <div class="toasts" id="toasts" aria-live="polite"></div>
   <script type="module" src="js/app.js"></script>
 </body>

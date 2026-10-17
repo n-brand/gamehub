@@ -2,8 +2,13 @@ import { CATEGORIES, GAMES, getGame } from './games.js';
 import * as store from './storage.js';
 import { art } from './art.js';
 import * as economy from './economy.js';
-import { initEconomyUI, renderShop, renderAchievements } from './ui-economy.js';
+import { initEconomyUI } from './ui-economy.js';
+import { renderShop, priceHtml } from './shop.js';
+import { trialApi, TRIAL_SECONDS } from './trial.js';
+import { renderInventory } from './inventory.js';
 import { renderMenu } from './game-menu.js';
+import { renderLegal } from './legal.js';
+import { dropdown } from './ui.js';
 
 const app = document.getElementById('app');
 const search = document.getElementById('search');
@@ -48,6 +53,9 @@ function badgeFor(game) {
 
 const STAR_ON = '<svg viewBox="0 0 24 24"><path d="M12 2.8l2.8 5.8 6.3.9-4.6 4.4 1.1 6.3L12 17.2l-5.6 3 1.1-6.3L2.9 9.5l6.3-.9z" fill="currentColor"/></svg>';
 const STAR_OFF = '<svg viewBox="0 0 24 24"><path d="M12 2.8l2.8 5.8 6.3.9-4.6 4.4 1.1 6.3L12 17.2l-5.6 3 1.1-6.3L2.9 9.5l6.3-.9z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>';
+const GRID_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><rect x="4" y="4" width="7" height="7" rx="1.8"/><rect x="13" y="4" width="7" height="7" rx="1.8"/><rect x="4" y="13" width="7" height="7" rx="1.8"/><rect x="13" y="13" width="7" height="7" rx="1.8"/></svg>';
+const EXIT_FULLSCREEN_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg>';
+const FULLSCREEN_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>';
 
 function favButton(game) {
   const on = store.isFavorite(game.id);
@@ -76,20 +84,6 @@ function tile(game) {
   );
 }
 
-function featureCard(game) {
-  return cardTag(
-    game,
-    'feature',
-    `${badgeFor(game)}
-     <div class="feature-art">${art(game)}</div>
-     <div class="feature-body">
-       <h3>${escapeHtml(game.title)}</h3>
-       <p>${escapeHtml(game.teaser || '')}</p>
-       <span class="feature-link">${game.available ? 'Jetzt spielen' : 'Bald verfügbar'} <span class="arrow">→</span></span>
-     </div>`,
-  );
-}
-
 function section(title, games) {
   if (!games.length) return '';
   return `<section><h2>${title}</h2><div class="grid">${games.map(tile).join('')}</div></section>`;
@@ -97,31 +91,44 @@ function section(title, games) {
 
 // ---------- Übersicht ----------
 
+const FAV = '★'; // Filter „Favoriten“ in der Chip-Reihe (activeCategory === FAV)
+
 function renderOverview() {
   const q = search.value.trim().toLowerCase();
   let games = GAMES;
-  if (activeCategory) games = games.filter((g) => g.categories.includes(activeCategory));
+  if (activeCategory === FAV) {
+    const favs = store.getFavorites();
+    games = games.filter((g) => favs.includes(g.id));
+  } else if (activeCategory) {
+    games = games.filter((g) => g.categories.includes(activeCategory));
+  }
   if (q) games = games.filter((g) => g.title.toLowerCase().includes(q));
   // Spielbare Spiele zuerst
   games = [...games].sort((a, b) => Number(b.available) - Number(a.available));
 
-  const byId = (id) => getGame(id);
-  const recent = store.getRecent().map(byId).filter(Boolean);
-  const favorites = store.getFavorites().map(byId).filter(Boolean);
-  const filtering = q || activeCategory;
+  const title = q ? 'Ergebnisse' : activeCategory === FAV ? 'Favoriten' : activeCategory || 'Alle Spiele';
+  const empty =
+    activeCategory === FAV && !q
+      ? '<p class="empty">Noch keine Favoriten – tippe auf den Stern einer Spiele-Kachel.</p>'
+      : '<p class="empty">Keine Spiele gefunden.</p>';
 
+  const filters = [['', 'Alle Spiele'], [FAV, '★ Favoriten'], ...CATEGORIES.map((c) => [c, c])];
   app.innerHTML = `
-    ${filtering ? '' : `<section class="hero"><h1>Spiel sofort los.</h1><p>Keine Installation, kein Login – einfach im Browser spielen.</p></section><div class="features">${GAMES.filter((g) => g.featured).map(featureCard).join('')}</div>`}
-    <nav class="chips">
+    <nav class="chips chips--sticky chips--collapse">
       <button class="chip ${activeCategory ? '' : 'chip--active'}" data-cat="">Alle</button>
+      <button class="chip ${activeCategory === FAV ? 'chip--active' : ''}" data-cat="${FAV}">★ Favoriten</button>
       ${CATEGORIES.map((c) => `<button class="chip ${c === activeCategory ? 'chip--active' : ''}" data-cat="${c}">${c}</button>`).join('')}
     </nav>
-    ${filtering ? '' : section('Zuletzt gespielt', recent)}
-    ${filtering ? '' : section('Favoriten', favorites)}
-    ${games.length ? section(filtering ? 'Ergebnisse' : 'Alle Spiele', games) : '<p class="empty">Keine Spiele gefunden.</p>'}
+    <section>
+      <div class="section-head">
+        <h2>${title}</h2>
+        ${dropdown({ name: 'cat', options: filters, value: activeCategory || '', label: 'Filter', ariaLabel: 'Spiele filtern', align: 'end' })}
+      </div>
+      ${games.length ? `<div class="grid">${games.map(tile).join('')}</div>` : empty}
+    </section>
   `;
 
-  app.querySelectorAll('.chip').forEach((btn) =>
+  app.querySelectorAll('.chip[data-cat]').forEach((btn) =>
     btn.addEventListener('click', () => {
       activeCategory = btn.dataset.cat || null;
       renderOverview();
@@ -129,7 +136,14 @@ function renderOverview() {
   );
 }
 
-// Favoriten-Stern auf Kacheln und Feature-Karten (Übersicht und „Ähnliche Spiele“)
+// Filter-Dropdown auf dem Handy (statt der Chip-Reihe)
+app.addEventListener('dropdown-change', (e) => {
+  if (e.detail.name !== 'cat') return;
+  activeCategory = e.detail.value || null;
+  renderOverview();
+});
+
+// Favoriten-Stern auf Kacheln (Übersicht und „Ähnliche Spiele“)
 app.addEventListener('click', (e) => {
   const btn = e.target.closest('[data-fav]');
   if (!btn) return;
@@ -140,7 +154,7 @@ app.addEventListener('click', (e) => {
     // „Ähnliche Spiele“ enthält das aktuelle Spiel nie, also nur den geklickten Stern tauschen
     btn.outerHTML = favButton(getGame(id));
   } else {
-    // Abschnitt „Favoriten“ neu aufbauen, Scrollposition behalten
+    // Übersicht neu aufbauen (Stern, Favoriten-Filter), Scrollposition behalten
     const y = window.scrollY;
     renderOverview();
     window.scrollTo(0, y);
@@ -149,29 +163,79 @@ app.addEventListener('click', (e) => {
 
 // ---------- Spieleseite ----------
 
-async function renderGame(id) {
+// Probe-Runde („Ausprobieren“ im Shop, #/game/<spiel>/probe/<design>): Design aus dem Katalog – beim direkten
+// Aufruf erst den Start der Wirtschaft abwarten. Nur kaufbare Designs dieses Spiels, sonst normales Spiel.
+async function findTrialItem(gameId, itemId) {
+  if (!economy.enabled) return null;
+  if (!economy.state.ready) {
+    await new Promise((resolve) => {
+      const off = economy.onChange(() => {
+        if (economy.state.ready) {
+          off();
+          resolve();
+        }
+      });
+    });
+  }
+  const item = economy.state.catalog.items.find((i) => i.id === itemId);
+  return item && item.game === gameId && !item.exclusive ? item : null;
+}
+
+const trialBar = (item) => `
+  <div class="trial-bar">
+    <span class="trial-tag">Probe</span>
+    <span class="trial-text"><strong>${escapeHtml(item.name)}</strong><span class="trial-rules"> · ohne Coins und Erfolge</span></span>
+    <span class="trial-time" data-trial-time title="Restzeit"></span>
+    <a class="btn btn--primary btn--sm" href="#/shop/${item.id}">Kaufen</a>
+  </div>`;
+
+const trialEndHtml = (item, reason) => `
+  <div class="trial-end">
+    <p class="trial-end-kicker">${reason === 'time' ? 'Die Probezeit ist um' : 'Probe-Runde vorbei'}</p>
+    <h2>Gefällt dir „${escapeHtml(item.name)}“?</h2>
+    <p class="trial-end-text">Kauf das Design, dann spielst du damit richtig – mit Coins und Erfolgen.</p>
+    <div class="trial-end-price">${priceHtml(item, { big: true })}</div>
+    <div class="trial-end-actions">
+      <a class="btn btn--primary" href="#/shop/${item.id}">Jetzt kaufen</a>
+      <a class="btn" href="#/shop">Zurück zum Shop</a>
+    </div>
+  </div>`;
+
+async function renderGame(id, trialId = null) {
   const game = getGame(id);
   if (!game || !game.available) {
     location.hash = '#/';
     return;
   }
-  store.addRecent(id);
+  const trial = trialId ? await findTrialItem(id, trialId) : null;
+  if (trialId) {
+    // Seite könnte inzwischen gewechselt sein; ungültige Probe → normales Spiel
+    if (!location.hash.startsWith(`#/game/${id}/probe/${trialId}`)) return;
+    if (!trial) history.replaceState(null, '', `${location.pathname}${location.search}#/game/${id}`);
+  }
+  // Probe-Runden zählen nicht als „zuletzt gespielt“
+  if (!trial) store.addRecent(id);
 
   const others = GAMES.filter((g) => g.id !== id && g.categories.some((c) => game.categories.includes(c)));
+  const [backHref, backLabel] = trial ? ['#/shop', 'Zurück zum Shop'] : ['#/', 'Alle Spiele'];
 
   app.innerHTML = `
     <div class="game-page">
       <div class="game-stage">
       <div class="game-head">
-        <a href="#/" class="back">← Alle Spiele</a>
+        <a href="${backHref}" class="back" aria-label="${backLabel}"><span aria-hidden="true">←</span><span class="back-label"> ${backLabel}</span></a>
         <h1>${escapeHtml(game.title)}</h1>
         <div class="game-actions">
-          <button class="btn" id="menu" hidden>☰ Menü</button>
-          <button class="btn" id="fav"></button>
-          <button class="btn" id="fullscreen">⛶ Vollbild</button>
+          <button class="btn" id="menu" hidden title="Spielmenü" aria-label="Spielmenü">${GRID_ICON}<span class="btn-label">Menü</span></button>
+          <button class="btn" id="fav" aria-label="Favorit"></button>
+          <button class="btn" id="fullscreen" title="Vollbild" aria-label="Vollbild">${FULLSCREEN_ICON}<span class="btn-label">Vollbild</span></button>
         </div>
       </div>
-      <div class="game-frame" id="frame" style="${themeVars(game)}"></div>
+      ${trial ? trialBar(trial) : ''}
+      <div class="game-fs" id="fs">
+        <div class="game-frame" id="frame" style="${themeVars(game)}"></div>
+        <button class="fs-exit" id="fs-exit" type="button" title="Vollbild beenden" aria-label="Vollbild beenden">${EXIT_FULLSCREEN_ICON}</button>
+      </div>
       </div>
       <div class="game-info">
         <p>${escapeHtml(game.description)}</p>
@@ -183,15 +247,27 @@ async function renderGame(id) {
   `;
 
   const favBtn = app.querySelector('#fav');
-  const updateFav = (on) => (favBtn.textContent = on ? '★ Favorit' : '☆ Favorit');
+  const updateFav = (on) => {
+    favBtn.classList.toggle('is-on', on);
+    favBtn.setAttribute('aria-pressed', String(on));
+    favBtn.title = on ? 'Aus den Favoriten entfernen' : 'Zu den Favoriten hinzufügen';
+    favBtn.innerHTML = `${on ? STAR_ON : STAR_OFF}<span class="btn-label">Favorit</span>`;
+  };
   updateFav(store.isFavorite(id));
   favBtn.addEventListener('click', () => updateFav(store.toggleFavorite(id)));
 
   const frame = app.querySelector('#frame');
-  app.querySelector('#fullscreen').addEventListener('click', () => {
+  const fullscreenBtn = app.querySelector('#fullscreen');
+  // iPhone-Safari kann einzelne Elemente nicht im Vollbild zeigen – Knopf dann weglassen
+  fullscreenBtn.hidden = !document.fullscreenEnabled;
+  // Vollbild für Rahmen + Beenden-Knopf (der Rahmen selbst wird von den Spielen neu befüllt)
+  const fsBox = app.querySelector('#fs');
+  fullscreenBtn.addEventListener('click', () => {
     if (document.fullscreenElement) document.exitFullscreen();
-    else frame.requestFullscreen?.();
+    else fsBox.requestFullscreen?.();
   });
+  // Auf dem Handy gibt es kein Esc – deshalb ein sichtbarer Knopf, nur im Vollbild eingeblendet
+  app.querySelector('#fs-exit').addEventListener('click', () => document.fullscreenElement && document.exitFullscreen());
 
   const mod = await import(`../games/${id}.js`);
   // Seite könnte inzwischen gewechselt sein
@@ -206,6 +282,58 @@ async function renderGame(id) {
     // Ausgerüsteter Shop-Artikel eines Slots (Standard: Slot = Spiel-ID)
     getDesign: (slot = id) => economy.getEquipped(slot),
   };
+
+  // Probe-Runde: ohne Spielmenü direkt auf der leichtesten Stufe; nach einer Runde (kurz danach, damit man
+  // das Ende noch sieht) oder nach TRIAL_SECONDS ersetzt die Abschluss-Karte das Spiel. Die Zeit läuft ab
+  // dem ersten Klick/Tastendruck – vorher wartet das Spiel ohnehin auf den Start.
+  if (trial) {
+    const timeEl = app.querySelector('[data-trial-time]');
+    let left = TRIAL_SECONDS;
+    let ended = false;
+    let tick = 0;
+    let endTimer = 0;
+    let stopGame = null;
+    const showTime = () => (timeEl.textContent = `${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}`);
+    const stopTimers = () => {
+      clearInterval(tick);
+      clearTimeout(endTimer);
+      frame.removeEventListener('pointerdown', startClock);
+      window.removeEventListener('keydown', startClock);
+    };
+    const end = (reason) => {
+      if (ended) return;
+      ended = true;
+      stopTimers();
+      stopGame?.();
+      stopGame = null;
+      left = 0;
+      showTime();
+      frame.innerHTML = trialEndHtml(trial, reason);
+    };
+    function startClock() {
+      if (tick || ended) return;
+      tick = setInterval(() => {
+        left -= 1;
+        showTime();
+        if (left <= 0) end('time');
+      }, 1000);
+    }
+    frame.addEventListener('pointerdown', startClock);
+    window.addEventListener('keydown', startClock);
+    showTime();
+    stopGame = mod.mount(frame, trialApi(api, trial, {
+      level: game.levels?.[0]?.id,
+      onRoundEnd: () => {
+        if (!ended && !endTimer) endTimer = setTimeout(() => end('round'), 1500);
+      },
+    }));
+    cleanupGame = () => {
+      ended = true;
+      stopTimers();
+      stopGame?.();
+    };
+    return;
+  }
 
   // Erst das Spielmenü (Level, Designs, Erfolge), dann das Spiel mit der gewählten Stufe
   const showMenu = () => {
@@ -233,23 +361,121 @@ function route() {
     cleanupGame();
     cleanupGame = null;
   }
-  const match = location.hash.match(/^#\/game\/([\w-]+)/);
+  const match = location.hash.match(/^#\/game\/([\w-]+)(?:\/probe\/([\w-]+))?/); // …/probe/<id> = Probe-Runde
+  const shop = location.hash.match(/^#\/shop(?:\/([\w-]+))?$/); // #/shop/<id> öffnet die Detailansicht
+  let nav = '#/'; // aktiver Menüpunkt: „Games“ gilt für Übersicht und Spieleseiten
   if (match) {
-    renderGame(match[1]);
-  } else if (location.hash === '#/shop' && economy.enabled) {
-    cleanupGame = renderShop(app);
-  } else if (location.hash === '#/erfolge' && economy.enabled) {
-    cleanupGame = renderAchievements(app);
+    renderGame(match[1], match[2] || null);
+  } else if (shop && economy.enabled) {
+    cleanupGame = renderShop(app, { item: shop[1] || null });
+    nav = '#/shop';
+  } else if (['#/inventar', '#/profil', '#/erfolge'].includes(location.hash) && economy.enabled) {
+    // Inventar: Designs, Erfolge und Kontostand. Alte Adressen (#/profil, #/erfolge) landen hier.
+    const focus = location.hash === '#/erfolge' ? 'achievements' : null;
+    if (location.hash !== '#/inventar') history.replaceState(null, '', `${location.pathname}${location.search}#/inventar`);
+    cleanupGame = renderInventory(app, { focus });
+    nav = '#/inventar';
+  } else if (location.hash === '#/datenschutz') {
+    // Die Datenschutzerklärung ist eine eigene Seite ohne # (Google muss sie direkt abrufen können)
+    location.replace('datenschutz.html');
+    return;
+  } else if (location.hash === '#/impressum') {
+    renderLegal(app, 'impressum');
+    nav = null;
   } else {
     renderOverview();
   }
-  document.querySelectorAll('[data-nav]').forEach((a) => a.classList.toggle('is-active', location.hash === a.getAttribute('href')));
+  document.querySelectorAll('[data-nav]').forEach((a) => a.classList.toggle('is-active', a.getAttribute('href') === nav));
+  // Seitenwechsel schließt das ☰-Menü – außer beim Tippen in die Suche (die wechselt selbst zur Übersicht)
+  if (document.activeElement !== search) setMenu(false);
   window.scrollTo(0, 0);
 }
 
 search.addEventListener('input', () => {
+  updateSearchPop();
   if (location.hash.startsWith('#/game/')) location.hash = '#/';
   else renderOverview();
+});
+
+// ---------- „Zuletzt gespielt“ und Favoriten unter dem Suchfeld ----------
+// Klappt beim Klick ins Suchfeld auf, solange noch nichts getippt ist.
+
+const searchPop = document.getElementById('search-pop');
+
+function updateSearchPop() {
+  const open = document.activeElement === search && !search.value.trim();
+  searchPop.hidden = !open;
+  if (!open) return;
+  const games = (ids) => ids.map((id) => getGame(id)).filter(Boolean);
+  const list = (items) =>
+    items
+      .map(
+        (g) => `<a class="recent-item" href="#/game/${g.id}" style="${themeVars(g)}">
+          <span class="recent-thumb" aria-hidden="true">${art(g)}</span>${escapeHtml(g.title)}
+        </a>`,
+      )
+      .join('');
+  const recent = games(store.getRecent()).slice(0, 5);
+  const favorites = games(store.getFavorites());
+  searchPop.innerHTML = `
+    <h3>Zuletzt gespielt</h3>
+    ${recent.length ? list(recent) : '<p>Noch nichts gespielt – such dir ein Spiel aus.</p>'}
+    ${favorites.length ? `<h3>Favoriten</h3>${list(favorites)}` : ''}`;
+}
+
+search.addEventListener('focus', updateSearchPop);
+// Mausklick in die Liste nimmt dem Suchfeld nicht den Fokus (sonst schließt sie vor dem Klick)
+searchPop.addEventListener('mousedown', (e) => e.preventDefault());
+search.addEventListener('blur', () => {
+  // Per Tab in die Liste wechseln lässt sie offen
+  setTimeout(() => {
+    if (!searchPop.contains(document.activeElement)) searchPop.hidden = true;
+  });
+});
+searchPop.addEventListener('focusout', (e) => {
+  if (!searchPop.contains(e.relatedTarget) && e.relatedTarget !== search) searchPop.hidden = true;
+});
+searchPop.addEventListener('click', (e) => {
+  if (e.target.closest('.recent-item')) {
+    searchPop.hidden = true;
+    search.blur();
+  }
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return;
+  if (!searchPop.hidden) {
+    searchPop.hidden = true;
+    search.blur();
+  }
+  setMenu(false);
+});
+// Enter schließt auf dem Handy die Tastatur, die Ergebnisse stehen schon darunter
+search.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') search.blur();
+});
+
+// ---------- Menü auf Tablet und Handy (☰) ----------
+// Suche, Navigation und Hell/Dunkel klappen unter der Kopfzeile auf (Layout in style.css).
+
+const topbar = document.getElementById('topbar');
+const menuToggle = document.getElementById('menu-toggle');
+
+function setMenu(open) {
+  topbar.classList.toggle('is-open', open);
+  menuToggle.setAttribute('aria-expanded', String(open));
+  menuToggle.setAttribute('aria-label', open ? 'Menü schließen' : 'Menü öffnen');
+}
+
+menuToggle.addEventListener('click', () => setMenu(!topbar.classList.contains('is-open')));
+// Links (Navigation, Zuletzt gespielt, Logo, Guthaben) schließen das Menü, ebenso ein Klick daneben
+topbar.addEventListener('click', (e) => {
+  if (e.target.closest('a')) setMenu(false);
+});
+document.addEventListener('click', (e) => {
+  if (!topbar.contains(e.target)) setMenu(false);
+});
+matchMedia('(min-width: 901px)').addEventListener('change', (e) => {
+  if (e.matches) setMenu(false);
 });
 
 // ---------- Theme (Standard: dark) ----------
@@ -260,9 +486,9 @@ const MOON = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.5 14.5A8
 
 function updateThemeButton() {
   const light = document.documentElement.dataset.theme === 'light';
-  // Zeigt das Ziel-Theme an
-  themeBtn.innerHTML = light ? MOON : SUN;
+  // Zeigt das Ziel-Theme an (Beschriftung nur im ☰-Menü sichtbar)
   themeBtn.title = light ? 'Dunkles Design' : 'Helles Design';
+  themeBtn.innerHTML = `${light ? MOON : SUN}<span class="theme-label">${themeBtn.title}</span>`;
   themeBtn.setAttribute('aria-label', themeBtn.title);
 }
 
