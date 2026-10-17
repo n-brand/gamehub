@@ -5,10 +5,19 @@
 -- Grundprinzip: Clients dürfen Tabellen nur LESEN (eigene Zeilen bzw. öffentliche Kataloge).
 -- Alle Änderungen an Kontoständen, Inventar und Erfolgen laufen über die Funktionen unten
 -- (security definer), die Beträge selbst berechnen und Eingaben prüfen.
+--
+-- Die Datenbank wird von mehreren Projekten genutzt: Alles von GameHub liegt im Schema "gamehub"
+-- (nicht in "public"). Das Schema muss in Supabase unter den Data-API-Einstellungen bei
+-- "Exposed schemas" eingetragen sein, sonst erreicht die Webseite es nicht.
+-- Übersicht der Tabellen: docs/datenbank.md
+
+create schema if not exists gamehub;
+comment on schema gamehub is 'GameHub (github.com/n-brand/gamehub): Coins, Glücksrad, Erfolge, Shop';
+grant usage on schema gamehub to anon, authenticated;
 
 -- ---------- Tabellen ----------
 
-create table if not exists public.profiles (
+create table if not exists gamehub.profiles (
   id uuid primary key references auth.users (id) on delete cascade,
   coins integer not null default 0 check (coins >= 0),
   diamonds integer not null default 0 check (diamonds >= 0),
@@ -17,8 +26,8 @@ create table if not exists public.profiles (
   created_at timestamptz not null default now()
 );
 
-create table if not exists public.game_stats (
-  user_id uuid not null references public.profiles (id) on delete cascade,
+create table if not exists gamehub.game_stats (
+  user_id uuid not null references gamehub.profiles (id) on delete cascade,
   game text not null,
   plays integer not null default 0,
   wins integer not null default 0,
@@ -29,7 +38,7 @@ create table if not exists public.game_stats (
 );
 
 -- Coins pro Runde. difficulty '' gilt für alle Stufen; eine Regel mit passender Stufe hat Vorrang.
-create table if not exists public.reward_rules (
+create table if not exists gamehub.reward_rules (
   game text not null,
   difficulty text not null default '',
   result text not null check (result in ('win', 'draw', 'score')),
@@ -41,14 +50,14 @@ create table if not exists public.reward_rules (
   primary key (game, difficulty, result)
 );
 
-create table if not exists public.wheel_segments (
+create table if not exists gamehub.wheel_segments (
   idx integer primary key,
   coins integer not null default 0,
   diamonds integer not null default 0,
   weight integer not null check (weight > 0)
 );
 
-create table if not exists public.achievements (
+create table if not exists gamehub.achievements (
   id text primary key,
   game text, -- null = allgemein
   name text not null,
@@ -60,14 +69,14 @@ create table if not exists public.achievements (
   sort integer not null default 0
 );
 
-create table if not exists public.user_achievements (
-  user_id uuid not null references public.profiles (id) on delete cascade,
-  achievement_id text not null references public.achievements (id) on delete cascade,
+create table if not exists gamehub.user_achievements (
+  user_id uuid not null references gamehub.profiles (id) on delete cascade,
+  achievement_id text not null references gamehub.achievements (id) on delete cascade,
   unlocked_at timestamptz not null default now(),
   primary key (user_id, achievement_id)
 );
 
-create table if not exists public.shop_items (
+create table if not exists gamehub.shop_items (
   id text primary key,
   game text not null,
   slot text not null, -- Shop-Kategorie; pro Slot ist ein Artikel ausgerüstet (z. B. cubejump-theme, cubejump-skin)
@@ -77,104 +86,104 @@ create table if not exists public.shop_items (
   sort integer not null default 0
 );
 
-create table if not exists public.inventory (
-  user_id uuid not null references public.profiles (id) on delete cascade,
-  item_id text not null references public.shop_items (id) on delete cascade,
+create table if not exists gamehub.inventory (
+  user_id uuid not null references gamehub.profiles (id) on delete cascade,
+  item_id text not null references gamehub.shop_items (id) on delete cascade,
   acquired_at timestamptz not null default now(),
   primary key (user_id, item_id)
 );
 
-create table if not exists public.equipped (
-  user_id uuid not null references public.profiles (id) on delete cascade,
+create table if not exists gamehub.equipped (
+  user_id uuid not null references gamehub.profiles (id) on delete cascade,
   slot text not null,
-  item_id text not null references public.shop_items (id) on delete cascade,
+  item_id text not null references gamehub.shop_items (id) on delete cascade,
   primary key (user_id, slot)
 );
 
 -- Aktualisierung älterer Fassungen dieses Skripts (Slots statt ein Design pro Spiel)
-alter table public.shop_items add column if not exists slot text;
-update public.shop_items set slot = game where slot is null;
+alter table gamehub.shop_items add column if not exists slot text;
+update gamehub.shop_items set slot = game where slot is null;
 do $$
 begin
   if exists (
     select 1 from information_schema.columns
-     where table_schema = 'public' and table_name = 'equipped' and column_name = 'game'
+     where table_schema = 'gamehub' and table_name = 'equipped' and column_name = 'game'
   ) then
-    alter table public.equipped rename column game to slot;
+    alter table gamehub.equipped rename column game to slot;
   end if;
 end;
 $$;
 
 -- ---------- Zugriffsrechte (Row Level Security) ----------
 
-alter table public.profiles enable row level security;
-alter table public.game_stats enable row level security;
-alter table public.reward_rules enable row level security;
-alter table public.wheel_segments enable row level security;
-alter table public.achievements enable row level security;
-alter table public.user_achievements enable row level security;
-alter table public.shop_items enable row level security;
-alter table public.inventory enable row level security;
-alter table public.equipped enable row level security;
+alter table gamehub.profiles enable row level security;
+alter table gamehub.game_stats enable row level security;
+alter table gamehub.reward_rules enable row level security;
+alter table gamehub.wheel_segments enable row level security;
+alter table gamehub.achievements enable row level security;
+alter table gamehub.user_achievements enable row level security;
+alter table gamehub.shop_items enable row level security;
+alter table gamehub.inventory enable row level security;
+alter table gamehub.equipped enable row level security;
 
-drop policy if exists "eigenes Profil lesen" on public.profiles;
-create policy "eigenes Profil lesen" on public.profiles for select to authenticated using (id = auth.uid());
+drop policy if exists "eigenes Profil lesen" on gamehub.profiles;
+create policy "eigenes Profil lesen" on gamehub.profiles for select to authenticated using (id = auth.uid());
 
-drop policy if exists "eigene Statistik lesen" on public.game_stats;
-create policy "eigene Statistik lesen" on public.game_stats for select to authenticated using (user_id = auth.uid());
+drop policy if exists "eigene Statistik lesen" on gamehub.game_stats;
+create policy "eigene Statistik lesen" on gamehub.game_stats for select to authenticated using (user_id = auth.uid());
 
-drop policy if exists "eigene Erfolge lesen" on public.user_achievements;
-create policy "eigene Erfolge lesen" on public.user_achievements for select to authenticated using (user_id = auth.uid());
+drop policy if exists "eigene Erfolge lesen" on gamehub.user_achievements;
+create policy "eigene Erfolge lesen" on gamehub.user_achievements for select to authenticated using (user_id = auth.uid());
 
-drop policy if exists "eigenes Inventar lesen" on public.inventory;
-create policy "eigenes Inventar lesen" on public.inventory for select to authenticated using (user_id = auth.uid());
+drop policy if exists "eigenes Inventar lesen" on gamehub.inventory;
+create policy "eigenes Inventar lesen" on gamehub.inventory for select to authenticated using (user_id = auth.uid());
 
-drop policy if exists "eigene Designs lesen" on public.equipped;
-create policy "eigene Designs lesen" on public.equipped for select to authenticated using (user_id = auth.uid());
+drop policy if exists "eigene Designs lesen" on gamehub.equipped;
+create policy "eigene Designs lesen" on gamehub.equipped for select to authenticated using (user_id = auth.uid());
 
-drop policy if exists "Katalog lesen" on public.reward_rules;
-create policy "Katalog lesen" on public.reward_rules for select to anon, authenticated using (true);
+drop policy if exists "Katalog lesen" on gamehub.reward_rules;
+create policy "Katalog lesen" on gamehub.reward_rules for select to anon, authenticated using (true);
 
-drop policy if exists "Katalog lesen" on public.wheel_segments;
-create policy "Katalog lesen" on public.wheel_segments for select to anon, authenticated using (true);
+drop policy if exists "Katalog lesen" on gamehub.wheel_segments;
+create policy "Katalog lesen" on gamehub.wheel_segments for select to anon, authenticated using (true);
 
-drop policy if exists "Katalog lesen" on public.achievements;
-create policy "Katalog lesen" on public.achievements for select to anon, authenticated using (true);
+drop policy if exists "Katalog lesen" on gamehub.achievements;
+create policy "Katalog lesen" on gamehub.achievements for select to anon, authenticated using (true);
 
-drop policy if exists "Katalog lesen" on public.shop_items;
-create policy "Katalog lesen" on public.shop_items for select to anon, authenticated using (true);
+drop policy if exists "Katalog lesen" on gamehub.shop_items;
+create policy "Katalog lesen" on gamehub.shop_items for select to anon, authenticated using (true);
 
 -- ---------- Hilfsfunktionen (nur intern) ----------
 
 -- Profil bei der ersten Anmeldung anlegen
-create or replace function public.handle_new_user()
+create or replace function gamehub.handle_new_user()
 returns trigger
 language plpgsql
 security definer
-set search_path = public
+set search_path = gamehub
 as $$
 begin
-  insert into public.profiles (id) values (new.id) on conflict (id) do nothing;
+  insert into gamehub.profiles (id) values (new.id) on conflict (id) do nothing;
   return new;
 end;
 $$;
 
-drop trigger if exists on_auth_user_created on auth.users;
-create trigger on_auth_user_created
+drop trigger if exists gamehub_on_auth_user_created on auth.users;
+create trigger gamehub_on_auth_user_created
   after insert on auth.users
-  for each row execute function public.handle_new_user();
+  for each row execute function gamehub.handle_new_user();
 
-create or replace function public.ensure_profile(p_uid uuid)
+create or replace function gamehub.ensure_profile(p_uid uuid)
 returns void
 language sql
 security definer
-set search_path = public
+set search_path = gamehub
 as $$
-  insert into public.profiles (id) values (p_uid) on conflict (id) do nothing;
+  insert into gamehub.profiles (id) values (p_uid) on conflict (id) do nothing;
 $$;
 
 -- Ganzzahl aus JSON lesen (fehlt oder keine Zahl → 0, begrenzt auf einen sinnvollen Bereich)
-create or replace function public.int_from(p jsonb, k text)
+create or replace function gamehub.int_from(p jsonb, k text)
 returns integer
 language sql
 immutable
@@ -186,33 +195,33 @@ as $$
 $$;
 
 -- Aktueller Wert einer Erfolgs-Statistik
-create or replace function public.achievement_value(p_uid uuid, p_game text, p_stat text)
+create or replace function gamehub.achievement_value(p_uid uuid, p_game text, p_stat text)
 returns integer
 language plpgsql
 stable
 security definer
-set search_path = public
+set search_path = gamehub
 as $$
 declare
   v integer;
 begin
   if p_game is null then
     if p_stat = 'plays_total' then
-      select coalesce(sum(s.plays), 0) into v from public.game_stats s where s.user_id = p_uid;
+      select coalesce(sum(s.plays), 0) into v from gamehub.game_stats s where s.user_id = p_uid;
     elsif p_stat = 'games_played' then
-      select count(*) into v from public.game_stats s where s.user_id = p_uid and s.plays > 0;
+      select count(*) into v from gamehub.game_stats s where s.user_id = p_uid and s.plays > 0;
     elsif p_stat = 'spin_streak' then
-      select p.spin_streak into v from public.profiles p where p.id = p_uid;
+      select p.spin_streak into v from gamehub.profiles p where p.id = p_uid;
     end if;
   else
     select case p_stat
              when 'plays' then s.plays
              when 'wins' then s.wins
              when 'best_score' then s.best_score
-             else public.int_from(s.data, p_stat)
+             else gamehub.int_from(s.data, p_stat)
            end
       into v
-      from public.game_stats s
+      from gamehub.game_stats s
      where s.user_id = p_uid and s.game = p_game;
   end if;
   return coalesce(v, 0);
@@ -220,11 +229,11 @@ end;
 $$;
 
 -- Neu erreichte Erfolge freischalten und belohnen (genau einmal). Gibt die neuen Erfolge zurück.
-create or replace function public.check_achievements(p_uid uuid)
+create or replace function gamehub.check_achievements(p_uid uuid)
 returns jsonb
 language plpgsql
 security definer
-set search_path = public
+set search_path = gamehub
 as $$
 declare
   a record;
@@ -232,19 +241,19 @@ declare
 begin
   for a in
     select x.*
-      from public.achievements x
+      from gamehub.achievements x
      where not exists (
-             select 1 from public.user_achievements u
+             select 1 from gamehub.user_achievements u
               where u.user_id = p_uid and u.achievement_id = x.id
            )
      order by x.sort
   loop
-    if public.achievement_value(p_uid, a.game, a.stat) >= a.threshold then
-      insert into public.user_achievements (user_id, achievement_id)
+    if gamehub.achievement_value(p_uid, a.game, a.stat) >= a.threshold then
+      insert into gamehub.user_achievements (user_id, achievement_id)
       values (p_uid, a.id)
       on conflict do nothing;
       if found then
-        update public.profiles
+        update gamehub.profiles
            set coins = coins + a.reward_coins,
                diamonds = diamonds + a.reward_diamonds
          where id = p_uid;
@@ -261,7 +270,7 @@ $$;
 -- ---------- Funktionen für die Webseite ----------
 
 -- Runde melden: prüft Plausibilität, vergibt Coins, aktualisiert Statistik und Erfolge
-create or replace function public.report_result(
+create or replace function gamehub.report_result(
   p_game text,
   p_result text,
   p_difficulty text default '',
@@ -272,7 +281,7 @@ create or replace function public.report_result(
 returns jsonb
 language plpgsql
 security definer
-set search_path = public
+set search_path = gamehub
 as $$
 declare
   v_uid uuid := auth.uid();
@@ -307,9 +316,9 @@ begin
     v_extra := '{}'::jsonb;
   end if;
 
-  perform public.ensure_profile(v_uid);
-  insert into public.game_stats (user_id, game) values (v_uid, p_game) on conflict do nothing;
-  select * into v_stats from public.game_stats where user_id = v_uid and game = p_game for update;
+  perform gamehub.ensure_profile(v_uid);
+  insert into gamehub.game_stats (user_id, game) values (v_uid, p_game) on conflict do nothing;
+  select * into v_stats from gamehub.game_stats where user_id = v_uid and game = p_game for update;
 
   -- Plausibilität 1: jede Runde dauert mindestens 2 Sekunden
   if v_seconds < 2 then
@@ -322,7 +331,7 @@ begin
   end if;
 
   select r.* into v_rule
-    from public.reward_rules r
+    from gamehub.reward_rules r
    where r.game = p_game and r.result = p_result and r.difficulty in (v_diff, '')
    order by r.difficulty desc
    limit 1;
@@ -355,7 +364,7 @@ begin
       v_record := true;
     end if;
     -- 2048-Kachel erreicht
-    if p_game = '2048' and public.int_from(v_extra, 'maxTile') >= 2048 then
+    if p_game = '2048' and gamehub.int_from(v_extra, 'maxTile') >= 2048 then
       v_gain := v_gain + 50;
     end if;
 
@@ -363,30 +372,30 @@ begin
     v_data := v_stats.data;
     if p_result = 'win' and v_diff <> '' then
       v_data := jsonb_set(v_data, array['wins_' || v_diff],
-        to_jsonb(public.int_from(v_data, 'wins_' || v_diff) + 1));
+        to_jsonb(gamehub.int_from(v_data, 'wins_' || v_diff) + 1));
     end if;
     if v_extra ? 'maxTile' then
       v_data := jsonb_set(v_data, '{max_tile}',
-        to_jsonb(greatest(public.int_from(v_data, 'max_tile'), public.int_from(v_extra, 'maxTile'))));
+        to_jsonb(greatest(gamehub.int_from(v_data, 'max_tile'), gamehub.int_from(v_extra, 'maxTile'))));
     end if;
     if v_extra ? 'level' then
       v_data := jsonb_set(v_data, '{max_level}',
-        to_jsonb(greatest(public.int_from(v_data, 'max_level'), public.int_from(v_extra, 'level'))));
+        to_jsonb(greatest(gamehub.int_from(v_data, 'max_level'), gamehub.int_from(v_extra, 'level'))));
     end if;
     if v_extra ? 'quads' then
       v_data := jsonb_set(v_data, '{quads}',
-        to_jsonb(public.int_from(v_data, 'quads') + least(public.int_from(v_extra, 'quads'), 1000)));
+        to_jsonb(gamehub.int_from(v_data, 'quads') + least(gamehub.int_from(v_extra, 'quads'), 1000)));
     end if;
     if v_extra ? 'maxFruit' then
       v_data := jsonb_set(v_data, '{max_fruit}',
-        to_jsonb(greatest(public.int_from(v_data, 'max_fruit'), least(public.int_from(v_extra, 'maxFruit'), 11))));
+        to_jsonb(greatest(gamehub.int_from(v_data, 'max_fruit'), least(gamehub.int_from(v_extra, 'maxFruit'), 11))));
     end if;
     if p_game = 'pairs' and v_diff = 'hard' and p_result = 'win'
-       and public.int_from(v_extra, 'moves') between 15 and 25 then
-      v_data := jsonb_set(v_data, '{perfect30}', to_jsonb(public.int_from(v_data, 'perfect30') + 1));
+       and gamehub.int_from(v_extra, 'moves') between 15 and 25 then
+      v_data := jsonb_set(v_data, '{perfect30}', to_jsonb(gamehub.int_from(v_data, 'perfect30') + 1));
     end if;
 
-    update public.game_stats
+    update gamehub.game_stats
        set plays = plays + 1,
            wins = wins + case when p_result = 'win' then 1 else 0 end,
            best_score = greatest(best_score, v_score),
@@ -395,12 +404,12 @@ begin
      where user_id = v_uid and game = p_game;
 
     if v_gain > 0 then
-      update public.profiles set coins = coins + v_gain where id = v_uid;
+      update gamehub.profiles set coins = coins + v_gain where id = v_uid;
     end if;
-    v_new := public.check_achievements(v_uid);
+    v_new := gamehub.check_achievements(v_uid);
   end if;
 
-  select p.coins, p.diamonds into v_coins, v_diamonds from public.profiles p where p.id = v_uid;
+  select p.coins, p.diamonds into v_coins, v_diamonds from gamehub.profiles p where p.id = v_uid;
   return jsonb_build_object(
     'counted', v_counted,
     'coins_gained', v_gain,
@@ -413,11 +422,11 @@ end;
 $$;
 
 -- Glücksrad: einmal pro Kalendertag (deutsche Zeit); der Server würfelt
-create or replace function public.claim_daily_spin()
+create or replace function gamehub.claim_daily_spin()
 returns jsonb
 language plpgsql
 security definer
-set search_path = public
+set search_path = gamehub
 as $$
 declare
   v_uid uuid := auth.uid();
@@ -440,17 +449,17 @@ begin
   if v_uid is null then
     raise exception 'Nicht angemeldet';
   end if;
-  perform public.ensure_profile(v_uid);
-  select * into v_profile from public.profiles where id = v_uid for update;
+  perform gamehub.ensure_profile(v_uid);
+  select * into v_profile from gamehub.profiles where id = v_uid for update;
   if v_profile.last_spin = v_today then
     raise exception 'Heute schon gedreht' using errcode = 'P0001';
   end if;
 
   v_streak := case when v_profile.last_spin = v_today - 1 then v_profile.spin_streak + 1 else 1 end;
 
-  select sum(weight) into v_total from public.wheel_segments;
+  select sum(weight) into v_total from gamehub.wheel_segments;
   v_roll := random() * v_total;
-  for v_seg in select * from public.wheel_segments order by idx loop
+  for v_seg in select * from gamehub.wheel_segments order by idx loop
     v_acc := v_acc + v_seg.weight;
     exit when v_roll < v_acc;
   end loop;
@@ -462,15 +471,15 @@ begin
   end if;
   v_diamonds := v_seg.diamonds + v_bonus;
 
-  update public.profiles
+  update gamehub.profiles
      set coins = coins + v_coins,
          diamonds = diamonds + v_diamonds,
          spin_streak = v_streak,
          last_spin = v_today
    where id = v_uid;
 
-  v_new := public.check_achievements(v_uid);
-  select p.coins, p.diamonds into v_bal_coins, v_bal_diamonds from public.profiles p where p.id = v_uid;
+  v_new := gamehub.check_achievements(v_uid);
+  select p.coins, p.diamonds into v_bal_coins, v_bal_diamonds from gamehub.profiles p where p.id = v_uid;
 
   return jsonb_build_object(
     'segment', v_seg.idx,
@@ -487,11 +496,11 @@ end;
 $$;
 
 -- Artikel kaufen (Gratis-Artikel und bereits gekaufte werden nicht erneut berechnet)
-create or replace function public.buy_item(p_item text)
+create or replace function gamehub.buy_item(p_item text)
 returns jsonb
 language plpgsql
 security definer
-set search_path = public
+set search_path = gamehub
 as $$
 declare
   v_uid uuid := auth.uid();
@@ -503,38 +512,38 @@ begin
   if v_uid is null then
     raise exception 'Nicht angemeldet';
   end if;
-  perform public.ensure_profile(v_uid);
-  select * into v_item from public.shop_items where id = p_item;
+  perform gamehub.ensure_profile(v_uid);
+  select * into v_item from gamehub.shop_items where id = p_item;
   if not found then
     raise exception 'Unbekannter Artikel: %', p_item;
   end if;
-  select * into v_profile from public.profiles where id = v_uid for update;
+  select * into v_profile from gamehub.profiles where id = v_uid for update;
 
   if (v_item.price_coins = 0 and v_item.price_diamonds = 0)
-     or exists (select 1 from public.inventory where user_id = v_uid and item_id = p_item) then
+     or exists (select 1 from gamehub.inventory where user_id = v_uid and item_id = p_item) then
     return jsonb_build_object('owned', true, 'coins', v_profile.coins, 'diamonds', v_profile.diamonds);
   end if;
   if v_profile.coins < v_item.price_coins or v_profile.diamonds < v_item.price_diamonds then
     raise exception 'Nicht genug Guthaben' using errcode = 'P0001';
   end if;
 
-  update public.profiles
+  update gamehub.profiles
      set coins = coins - v_item.price_coins,
          diamonds = diamonds - v_item.price_diamonds
    where id = v_uid
   returning coins, diamonds into v_coins, v_diamonds;
-  insert into public.inventory (user_id, item_id) values (v_uid, p_item);
+  insert into gamehub.inventory (user_id, item_id) values (v_uid, p_item);
 
   return jsonb_build_object('owned', true, 'coins', v_coins, 'diamonds', v_diamonds);
 end;
 $$;
 
 -- Design ausrüsten (eins pro Slot, z. B. ein Theme und ein Würfel-Skin)
-create or replace function public.equip_item(p_item text)
+create or replace function gamehub.equip_item(p_item text)
 returns jsonb
 language plpgsql
 security definer
-set search_path = public
+set search_path = gamehub
 as $$
 declare
   v_uid uuid := auth.uid();
@@ -543,41 +552,72 @@ begin
   if v_uid is null then
     raise exception 'Nicht angemeldet';
   end if;
-  perform public.ensure_profile(v_uid);
-  select * into v_item from public.shop_items where id = p_item;
+  perform gamehub.ensure_profile(v_uid);
+  select * into v_item from gamehub.shop_items where id = p_item;
   if not found then
     raise exception 'Unbekannter Artikel: %', p_item;
   end if;
   if not (v_item.price_coins = 0 and v_item.price_diamonds = 0)
-     and not exists (select 1 from public.inventory where user_id = v_uid and item_id = p_item) then
+     and not exists (select 1 from gamehub.inventory where user_id = v_uid and item_id = p_item) then
     raise exception 'Artikel nicht im Besitz' using errcode = 'P0001';
   end if;
-  insert into public.equipped (user_id, slot, item_id)
+  insert into gamehub.equipped (user_id, slot, item_id)
   values (v_uid, v_item.slot, p_item)
   on conflict (user_id, slot) do update set item_id = excluded.item_id;
   return jsonb_build_object('slot', v_item.slot, 'item', p_item);
 end;
 $$;
 
--- ---------- Ausführungsrechte ----------
+-- ---------- Zugriffsrechte ----------
+-- Tabellen: nur Lesen (welche Zeilen, regeln die Policies oben). Im Schema "public" vergibt Supabase
+-- das automatisch, in einem eigenen Schema muss es hier stehen.
+revoke all on all tables in schema gamehub from anon, authenticated;
+grant select on all tables in schema gamehub to anon, authenticated;
+
 -- Interne Hilfsfunktionen sind für Clients gesperrt, die vier Seiten-Funktionen nur für Angemeldete.
+-- (handle_new_user bleibt unangetastet: der Login-Dienst von Supabase führt den Trigger aus.)
 
-revoke execute on function public.ensure_profile(uuid) from public, anon, authenticated;
-revoke execute on function public.achievement_value(uuid, text, text) from public, anon, authenticated;
-revoke execute on function public.check_achievements(uuid) from public, anon, authenticated;
+revoke execute on function gamehub.ensure_profile(uuid) from public, anon, authenticated;
+revoke execute on function gamehub.achievement_value(uuid, text, text) from public, anon, authenticated;
+revoke execute on function gamehub.check_achievements(uuid) from public, anon, authenticated;
 
-revoke execute on function public.report_result(text, text, text, integer, integer, jsonb) from public, anon;
-revoke execute on function public.claim_daily_spin() from public, anon;
-revoke execute on function public.buy_item(text) from public, anon;
-revoke execute on function public.equip_item(text) from public, anon;
-grant execute on function public.report_result(text, text, text, integer, integer, jsonb) to authenticated;
-grant execute on function public.claim_daily_spin() to authenticated;
-grant execute on function public.buy_item(text) to authenticated;
-grant execute on function public.equip_item(text) to authenticated;
+revoke execute on function gamehub.report_result(text, text, text, integer, integer, jsonb) from public, anon;
+revoke execute on function gamehub.claim_daily_spin() from public, anon;
+revoke execute on function gamehub.buy_item(text) from public, anon;
+revoke execute on function gamehub.equip_item(text) from public, anon;
+grant execute on function gamehub.report_result(text, text, text, integer, integer, jsonb) to authenticated;
+grant execute on function gamehub.claim_daily_spin() to authenticated;
+grant execute on function gamehub.buy_item(text) to authenticated;
+grant execute on function gamehub.equip_item(text) to authenticated;
+
+-- ---------- Beschreibungen (erscheinen in Supabase Studio bei Tabellen und Spalten) ----------
+
+comment on table gamehub.profiles is 'Kontostand pro Spieler (1 Zeile pro Login). Nur über Server-Funktionen änderbar.';
+comment on column gamehub.profiles.coins is 'Normale Währung';
+comment on column gamehub.profiles.diamonds is 'Premium-Währung (selten: Glücksrad, große Erfolge)';
+comment on column gamehub.profiles.spin_streak is 'Tage in Folge am Glücksrad gedreht';
+comment on column gamehub.profiles.last_spin is 'Letzter Dreh (Kalendertag, deutsche Zeit)';
+
+comment on table gamehub.game_stats is 'Statistik pro Spieler und Spiel, geschrieben von report_result';
+comment on column gamehub.game_stats.data is 'Spielspezifische Werte: wins_<stufe>, max_tile, max_level, quads, perfect30, max_fruit';
+comment on column gamehub.game_stats.last_report is 'Zeit der letzten gewerteten Runde (Plausibilitätsprüfung)';
+
+comment on table gamehub.reward_rules is 'Katalog: Coins pro Runde. difficulty '''' gilt für alle Stufen.';
+comment on column gamehub.reward_rules.per_points is 'Bei result=score: 1 Coin pro so viele Punkte';
+comment on column gamehub.reward_rules.min_seconds is 'Kürzere Runden werden nicht gewertet';
+comment on column gamehub.reward_rules.max_rate is 'Mehr Punkte pro Sekunde werden nicht gewertet';
+
+comment on table gamehub.wheel_segments is 'Katalog: Felder des Glücksrads mit Gewicht (Wahrscheinlichkeit)';
+comment on table gamehub.achievements is 'Katalog: Erfolge. game null = allgemein; stat = welcher Wert zählt';
+comment on table gamehub.user_achievements is 'Freigeschaltete Erfolge pro Spieler';
+comment on table gamehub.shop_items is 'Katalog: Shop-Designs. Aussehen im Code (designs.js), hier Preis und Slot';
+comment on column gamehub.shop_items.slot is 'Wo der Artikel ausgerüstet wird, z. B. snake, cubejump-skin, watermelon';
+comment on table gamehub.inventory is 'Gekaufte Shop-Artikel pro Spieler';
+comment on table gamehub.equipped is 'Ausgerüsteter Artikel pro Spieler und Slot';
 
 -- ---------- Kataloge (Startwerte, beim erneuten Ausführen aktualisiert) ----------
 
-insert into public.reward_rules (game, difficulty, result, coins, per_points, max_coins, min_seconds, max_rate) values
+insert into gamehub.reward_rules (game, difficulty, result, coins, per_points, max_coins, min_seconds, max_rate) values
   ('snake',       '',       'score',   0,    1, 100,  2,    4),
   ('2048',        '',       'score',   0,  200, 150,  5,  400),
   ('blocks',      '',       'score',   0,  250, 150,  5, 1500),
@@ -607,7 +647,7 @@ on conflict (game, difficulty, result) do update set
   min_seconds = excluded.min_seconds,
   max_rate = excluded.max_rate;
 
-insert into public.wheel_segments (idx, coins, diamonds, weight) values
+insert into gamehub.wheel_segments (idx, coins, diamonds, weight) values
   (0,  25, 0, 25),
   (1,  50, 0, 22),
   (2,  75, 0, 18),
@@ -618,7 +658,7 @@ insert into public.wheel_segments (idx, coins, diamonds, weight) values
   (7,   0, 5,  1)
 on conflict (idx) do update set coins = excluded.coins, diamonds = excluded.diamonds, weight = excluded.weight;
 
-insert into public.achievements (id, game, name, description, stat, threshold, reward_coins, reward_diamonds, sort) values
+insert into gamehub.achievements (id, game, name, description, stat, threshold, reward_coins, reward_diamonds, sort) values
   ('first-game',     null,          'Erste Runde',               'Spiele deine erste Runde.',                               'plays_total',  1,    50,  0,  10),
   ('all-games',      null,          'Allrounder',                'Spiele jedes der 9 Spiele mindestens einmal.',            'games_played', 9,   200,  0,  20),
   ('rounds-500',     null,          'Dauerbrenner',              'Spiele 500 Runden.',                                      'plays_total',  500,   0,  5,  30),
@@ -654,7 +694,7 @@ on conflict (id) do update set
   reward_diamonds = excluded.reward_diamonds,
   sort = excluded.sort;
 
-insert into public.shop_items (id, game, slot, name, price_coins, price_diamonds, sort) values
+insert into gamehub.shop_items (id, game, slot, name, price_coins, price_diamonds, sort) values
   ('snake-classic',    'snake',    'snake',          'Klassisch',         0,  0,   0),
   ('snake-fire',       'snake',    'snake',          'Feuer',           400,  0,  10),
   ('snake-zebra',      'snake',    'snake',          'Zebra',           600,  0,  20),

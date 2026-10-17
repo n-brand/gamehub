@@ -41,7 +41,7 @@
 
 **Offene Punkte:**
 - **Nächstes Spiel: Level-Devil-Prinzip** (vom Nutzer gewünscht, noch nicht begonnen): Plattformer, bei dem sich das Level hinterhältig verändert (Boden bricht weg, Stacheln tauchen auf, das Ziel weicht aus). Neutralen Namen wählen, „Level Devil“ ist ein bestehendes Spiel. Wie die anderen Spiele: Katalog-Eintrag mit Illustration, Spielmenü (Level), `reportResult`, Regeln/Erfolge in SQL und Demo-Backend, „Allrounder“ auf 10 Spiele.
-- **Supabase einrichten** (macht der Nutzer, Anleitung `docs/supabase-setup.md`): Projekt anlegen, SQL ausführen, Google-Login einrichten, `public/js/config.js` füllen, dann mit echtem Login testen. Das SQL-Skript hat sich seitdem geändert (Slots, Würfel-Skins, Watermelon Drop, Korrektur `do $$`) – immer die aktuelle Fassung ausführen.
+- **Supabase einrichten** (macht der Nutzer, Anleitung `docs/supabase-setup.md`): Projekt anlegen (oder ein bestehendes nehmen – die Datenbank wird für mehrere Projekte genutzt), ggf. `supabase/upgrade-from-public.sql`, dann `001_economy.sql` ausführen, Schema `gamehub` unter „Exposed schemas“ freigeben, Google-Login einrichten, `public/js/config.js` füllen, dann mit echtem Login testen. Immer die aktuelle Fassung des SQL-Skripts ausführen.
 - **Werte anpassen** (Coins pro Spiel, Preise, Glücksrad-Chancen): will der Nutzer nach dem Testen selbst machen.
 - **Datenschutzerklärung**: Pflicht, sobald der Google-Login öffentlich ist.
 - **Kopfzeile auf dem Handy zu breit**: Angemeldet passen Geschenk, Kontostand, Avatar und Theme-Knopf nicht in 375 px, die Seite scrollt seitlich (gemessen 486 px); `#toasts` ist ebenfalls zu breit. Als eigene Aufgabe vorgemerkt.
@@ -69,7 +69,10 @@
 - `tools/check-watermelon.mjs` – prüft die Physik von Watermelon Drop (6 Läufe mit festem Zufall)
 - `public/js/watermelon-art.js` – Motive (Früchte, Bälle, Planeten), Kiste, Wolke und Shop-Vorschau von Watermelon Drop
 - `public/js/demo-backend.js` – Demo-Backend für `?demo=1` (Kataloge bei Änderungen am SQL mitziehen)
-- `supabase/migrations/001_economy.sql` – Tabellen, RLS, Server-Funktionen (`report_result`, `claim_daily_spin`, `buy_item`, `equip_item`), Kataloge; im Supabase-SQL-Editor ausführen
+- `supabase/migrations/001_economy.sql` – Tabellen, RLS, Server-Funktionen (`report_result`, `claim_daily_spin`, `buy_item`, `equip_item`), Kataloge, Tabellen-Beschreibungen; im Supabase-SQL-Editor ausführen
+- `supabase/upgrade-from-public.sql` – einmaliger Umzug, falls eine alte Fassung die Tabellen noch in `public` angelegt hat
+- `docs/datenbank.md` – Übersicht der Tabellen und Funktionen, was mit anderen Projekten geteilt wird
+- **Datenbank-Regel:** Die Supabase-Datenbank teilen sich mehrere Projekte. GameHub arbeitet nur im Schema `gamehub` (nie in `public`); Trigger auf `auth.users` mit Präfix `gamehub_`. Bei Änderungen am SQL: `comment on …` und `docs/datenbank.md` mitpflegen.
 - Spiel-API (`mount(container, api)`): `getHighscore`, `submitScore` (lokal), `reportResult({ result, difficulty, score, durationMs, extra })`, `getDesign(slot = Spiel-ID)`, `level` (im Menü gewählte Stufe). Spiele mit Leveln exportieren zusätzlich `levelStats()` → `{ levelId: 'Bestwert …' }` für die Menü-Karten.
 
 ## Open-Source-Spiele (Recherche 2026-10)

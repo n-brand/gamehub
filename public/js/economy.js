@@ -61,6 +61,8 @@ export async function init() {
     } else {
       const { createClient } = await import(SUPABASE_JS);
       client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+        // Die Datenbank teilen sich mehrere Projekte – GameHub liegt im eigenen Schema
+        db: { schema: 'gamehub' },
         auth: { flowType: 'pkce', persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
       });
     }

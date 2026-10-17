@@ -10,16 +10,27 @@ Dauer: etwa 20–30 Minuten. Alles läuft im kostenlosen Tarif.
 ## 1. Supabase-Projekt anlegen
 
 1. Auf <https://supabase.com> anmelden (z. B. mit GitHub) und **New project** wählen.
-2. Name: `gamehub`, Region: **Central EU (Frankfurt)**.
+2. Name z. B. `projekte` (die Datenbank kann für mehrere Projekte genutzt werden), Region: **Central EU (Frankfurt)**.
 3. Ein sicheres Datenbank-Passwort erzeugen und gut aufbewahren (wird für die Webseite nicht gebraucht).
 4. Warten, bis das Projekt fertig ist (1–2 Minuten).
 
 ## 2. Datenbank anlegen
 
-1. Im Supabase-Dashboard links **SQL Editor** öffnen → **New query**.
-2. Den kompletten Inhalt von [`supabase/migrations/001_economy.sql`](../supabase/migrations/001_economy.sql) einfügen.
-3. **Run** klicken. Erwartet: „Success. No rows returned“.
-4. Unter **Table Editor** sollten jetzt Tabellen wie `profiles`, `shop_items` und `achievements` stehen.
+Die Datenbank kann von mehreren Projekten genutzt werden. GameHub legt alles im eigenen Schema
+**`gamehub`** an (nicht in `public`), Übersicht der Tabellen: [`docs/datenbank.md`](datenbank.md).
+Gibt es schon ein Supabase-Projekt für andere Projekte, Abschnitt 1 überspringen und dieses verwenden.
+
+1. **Nur falls eine ältere Fassung des Skripts schon lief** (GameHub-Tabellen liegen noch in `public`):
+   zuerst [`supabase/upgrade-from-public.sql`](../supabase/upgrade-from-public.sql) ausführen. Es verschiebt
+   die Tabellen samt Daten nach `gamehub` und räumt die alten Funktionen auf. Läuft sonst ohne Wirkung durch.
+2. Im Supabase-Dashboard links **SQL Editor** öffnen → **New query**.
+3. Den kompletten Inhalt von [`supabase/migrations/001_economy.sql`](../supabase/migrations/001_economy.sql) einfügen.
+4. **Run** klicken. Erwartet: „Success. No rows returned“.
+5. **Schema freigeben:** **Project Settings → Data API** (früher „API“) → **Exposed schemas** → `gamehub`
+   hinzufügen und speichern. Ohne diesen Schritt meldet die Webseite „schema must be one of …“.
+   (Die Menüpunkte benennt Supabase gelegentlich um.)
+6. Unter **Table Editor** oben das Schema `gamehub` wählen – dort stehen jetzt Tabellen wie `profiles`,
+   `shop_items` und `achievements`, mit Beschreibungen.
 
 Das Skript kann später erneut ausgeführt werden (z. B. nach Änderungen an Preisen oder Erfolgen) – die
 Kataloge werden dabei aktualisiert, Spielerdaten bleiben erhalten.
@@ -78,6 +89,6 @@ Nach dem Push auf `main` ist alles auch unter <https://n-brand.github.io/gamehub
   lässt sich das Projekt mit einem Klick wieder starten; die Daten bleiben erhalten.
 - **Datenschutz:** Mit Google-Login werden personenbezogene Daten verarbeitet (Name, E-Mail, Profilbild).
   Für eine öffentliche Seite ist eine Datenschutzerklärung nötig.
-- **Werte anpassen:** Coins pro Spiel, Glücksrad-Chancen, Erfolge und Preise stehen in den Tabellen
+- **Werte anpassen:** Coins pro Spiel, Glücksrad-Chancen, Erfolge und Preise stehen im Schema `gamehub` in den Tabellen
   `reward_rules`, `wheel_segments`, `achievements` und `shop_items` (direkt im Table Editor änderbar oder
   im SQL-Skript). Wie ein Design aussieht, steht in `public/js/designs.js`.
