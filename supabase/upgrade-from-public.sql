@@ -6,7 +6,8 @@
 -- 1. Alle GameHub-Tabellen werden samt Daten, Policies und Fremdschlüsseln nach "gamehub" verschoben.
 -- 2. Die alten Funktionen in "public" und der alte Anmelde-Trigger werden entfernt
 --    (001–999 legen sie danach in "gamehub" neu an).
--- Läuft ohne Wirkung durch, wenn keine GameHub-Tabellen in "public" liegen.
+-- Läuft ohne Wirkung durch, wenn keine GameHub-Tabellen (mehr) in "public" liegen; auch nach einem
+-- teilweisen Umzug wiederholbar (bereits verschobene Tabellen werden übersprungen).
 
 create schema if not exists gamehub;
 
@@ -15,9 +16,11 @@ declare
   t text;
   f record;
 begin
-  -- Nur weitermachen, wenn es wirklich die GameHub-Tabellen sind (reward_rules + wheel_segments gibt es nur hier)
-  if to_regclass('public.reward_rules') is null or to_regclass('public.wheel_segments') is null then
-    raise notice 'Keine GameHub-Tabellen in public gefunden – nichts zu verschieben.';
+  -- Nur weitermachen, wenn es wirklich die GameHub-Datenbank ist (reward_rules gibt es nur hier) –
+  -- egal ob noch in public oder schon (teilweise) umgezogen. Am 2026-10-17 lief eine ältere Fassung dieses
+  -- Skripts, die nur 9 Tabellen kannte: die 4 Shop-2.0-Tabellen blieben dabei in public und werden hier nachgeholt.
+  if to_regclass('public.reward_rules') is null and to_regclass('gamehub.reward_rules') is null then
+    raise notice 'Keine GameHub-Tabellen gefunden – nichts zu verschieben.';
     return;
   end if;
 
