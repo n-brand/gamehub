@@ -258,16 +258,39 @@ async function renderGame(id, trialId = null) {
 
   const frame = app.querySelector('#frame');
   const fullscreenBtn = app.querySelector('#fullscreen');
-  // iPhone-Safari kann einzelne Elemente nicht im Vollbild zeigen – Knopf dann weglassen
-  fullscreenBtn.hidden = !document.fullscreenEnabled;
   // Vollbild für Rahmen + Beenden-Knopf (der Rahmen selbst wird von den Spielen neu befüllt)
   const fsBox = app.querySelector('#fs');
-  fullscreenBtn.addEventListener('click', () => {
+  // iPhone-Safari kann einzelne Elemente nicht im Vollbild zeigen – dort füllt der Rahmen per CSS das Fenster
+  const nativeFs = !!document.fullscreenEnabled;
+  const setPseudoFs = (on) => {
+    fsBox.classList.toggle('is-fs', on);
+    document.documentElement.classList.toggle('fs-lock', on);
+    // Größen der Spiele (Container-Einheiten) neu berechnen lassen
+    window.dispatchEvent(new Event('resize'));
+  };
+  const toggleFs = () => {
+    if (nativeFs) {
+      if (document.fullscreenElement) document.exitFullscreen();
+      else fsBox.requestFullscreen?.();
+    } else {
+      setPseudoFs(!fsBox.classList.contains('is-fs'));
+    }
+  };
+  const exitFs = () => {
     if (document.fullscreenElement) document.exitFullscreen();
-    else fsBox.requestFullscreen?.();
-  });
+    else if (fsBox.classList.contains('is-fs')) setPseudoFs(false);
+  };
+  fullscreenBtn.addEventListener('click', toggleFs);
   // Auf dem Handy gibt es kein Esc – deshalb ein sichtbarer Knopf, nur im Vollbild eingeblendet
-  app.querySelector('#fs-exit').addEventListener('click', () => document.fullscreenElement && document.exitFullscreen());
+  app.querySelector('#fs-exit').addEventListener('click', exitFs);
+  if (!nativeFs) {
+    const onEsc = (e) => e.key === 'Escape' && exitFs();
+    document.addEventListener('keydown', onEsc);
+    window.addEventListener('hashchange', () => {
+      document.removeEventListener('keydown', onEsc);
+      document.documentElement.classList.remove('fs-lock');
+    }, { once: true });
+  }
 
   const mod = await import(`../games/${id}.js`);
   // Seite könnte inzwischen gewechselt sein

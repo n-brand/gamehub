@@ -34,7 +34,9 @@
 
 **Regel:** Nach jeder Änderung am Projekt diesen Abschnitt aktualisieren, damit er immer den aktuellen Stand widerspiegelt (was existiert, was in Arbeit ist, nächste Schritte).
 
-**Aktueller Stand (2026-10-05):**
+**Aktueller Stand (2026-10-22):**
+- **PWA** (2026-10-22): `public/manifest.webmanifest` (standalone, Navy `#0e1a2b`), Symbole in `public/icons/` (erzeugt mit `node tools/make-icons.mjs`, Gamepad flach), `public/sw.js` (Netz zuerst, bei fehlender Verbindung Cache; nur eigene GET-Anfragen; bei größeren Änderungen `CACHE` hochzählen), Registrierung am Ende von `index.html` nur über https/localhost, Apple-Meta-Tags im Kopf. Im Test-Browser lässt sich kein Service Worker registrieren – Installation und Offline-Betrieb noch nicht auf einem echten Gerät geprüft (Chrome Android: „App installieren“, iPhone: Teilen → „Zum Home-Bildschirm“).
+- **Vollbild für alle Spiele** über den gemeinsamen Rahmen (`#fs` in `app.js`). Wo es kein Element-Vollbild gibt (iPhone-Safari), füllt der Rahmen per CSS (`.game-fs.is-fs`, `html.fs-lock`) das ganze Fenster; Beenden über den Knopf oben rechts oder Esc. Im Test (375×667) bei allen 9 Spielen das Fenster gefüllt, Blockfall und Würfelsprung im Vollbild angesehen.
 - Grundgerüst der Plattform steht: reines HTML/CSS/JS ohne Build-Schritt und ohne npm-Abhängigkeiten.
 - Lokal starten: `npm run dev` (bzw. `node server.js`) → http://localhost:4177
 - Online: https://n-brand.github.io/gamehub/ – GitHub Actions (`.github/workflows/pages.yml`) veröffentlicht `public/` bei jedem Push auf `main`. Pfade in `public/` müssen relativ sein (Seite läuft unter `/gamehub/`).
@@ -90,6 +92,7 @@
 - `public/js/inventory.js` – Inventar `#/inventar` (Kontostand, „Meine Designs“, Erfolge)
 - `public/js/trial.js` – Probe-Runde („Ausprobieren“): `trialApi` (Probe-Design im eigenen Slot, Runden beenden die Probe statt Coins zu geben), `trialHash`, `TRIAL_SECONDS`; Leiste, Uhr und Abschluss-Karte in `app.js`
 - `public/js/designs.js` – Aussehen der Shop-Designs/Themes (Spiel und Shop-Vorschau; `drawPreview` wählt passend zum Spiel, `isAnimated` für bewegte Vorschauen). Würfel-Skins bestehen aus Merkmalen (`eyes`, `mouth`, `deco`, `embers`, `sparkle` … – Liste im Kommentar über `CUBE_SKINS`); `drawCube` zeichnet Feuer-Flammen und Glut ohne die Drehung, alles andere dreht mit
+- `tools/make-icons.mjs` – erzeugt die PWA-Symbole in `public/icons/` ohne Abhängigkeiten
 - `tools/check-cubejump-levels.mjs` – prüft, dass alle Würfelsprung-Level schaffbar sind
 - `tools/check-watermelon.mjs` – prüft die Physik von Watermelon Drop (6 Läufe mit festem Zufall)
 - `public/js/watermelon-art.js` – Motive (Früchte, Bälle, Planeten), Kiste, Wolke und Shop-Vorschau von Watermelon Drop

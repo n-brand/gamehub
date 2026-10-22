@@ -400,8 +400,11 @@ section h2 { font-size: 1.3rem; font-weight: 900; margin: 32px 0 14px; }
   justify-content: center;
   container-type: size;
 }
-.game-fs:fullscreen { margin: 0; background: var(--page); }
-.game-fs:fullscreen .game-frame { border-radius: 0; padding: 64px 24px 24px; box-shadow: none; }
+.game-fs:fullscreen, .game-fs.is-fs { margin: 0; background: var(--page); }
+.game-fs:fullscreen .game-frame, .game-fs.is-fs .game-frame { border-radius: 0; padding: 64px 24px 24px; box-shadow: none; }
+/* Vollbild-Ersatz für iPhone-Safari (kein Element-Vollbild): Rahmen füllt das ganze Fenster */
+.game-fs.is-fs { position: fixed; inset: 0; z-index: 200; }
+html.fs-lock, html.fs-lock body { overflow: hidden; overscroll-behavior: none; }
 .fs-exit {
   position: absolute;
   top: 10px;
@@ -419,7 +422,7 @@ section h2 { font-size: 1.3rem; font-weight: 900; margin: 32px 0 14px; }
 }
 .fs-exit svg { width: 22px; height: 22px; }
 .fs-exit:hover { background: rgba(14, 26, 43, 0.8); }
-.game-fs:fullscreen .fs-exit { display: grid; }
+.game-fs:fullscreen .fs-exit, .game-fs.is-fs .fs-exit { display: grid; }
 
 /* Probe-Runde („Ausprobieren“ im Shop): schmale Leiste über dem Spielfeld, danach Abschluss-Karte im Rahmen */
 .trial-bar {
@@ -565,7 +568,7 @@ section h2 { font-size: 1.3rem; font-weight: 900; margin: 32px 0 14px; }
   .game-fs { margin-top: 10px; }
   .trial-bar { gap: 8px; margin-top: 10px; }
   .trial-rules { display: none; }
-  .game-fs:fullscreen .game-frame { padding: 62px 12px 12px; }
+  .game-fs:fullscreen .game-frame, .game-fs.is-fs .game-frame { padding: 62px 12px 12px; }
   .game-frame { padding: 10px; }
   .game-info { margin-top: 20px; font-size: 1rem; }
   .snake-hud { font-size: 1.1rem; }
