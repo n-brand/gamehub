@@ -153,7 +153,7 @@ function chooseLogin() {
   const { el, close } = openModal(`
     <h2>Anmelden</h2>
     <p class="modal-text">Wähle, womit du dich anmelden möchtest.</p>
-    ${eco.loginProviders.map((p) => `<button type="button" class="btn btn--primary" data-provider="${p}">${PROVIDER_LABELS[p] || p}</button>`).join('')}`);
+    <div class="login-choices">${eco.loginProviders.map((p) => `<button type="button" class="btn btn--primary" data-provider="${p}">${PROVIDER_LABELS[p] || p}</button>`).join('')}</div>`);
   el.addEventListener('click', (e) => {
     const p = e.target.closest('[data-provider]')?.dataset.provider;
     if (!p) return;

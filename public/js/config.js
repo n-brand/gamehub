@@ -8,4 +8,4 @@ export const SUPABASE_ANON_KEY = 'sb_publishable_ZXUF7Am_AyTw8Exg11dGQA_Z0G-kRZx
 
 // Anmelde-Anbieter, die in Supabase (Authentication → Providers) eingerichtet sind.
 // 'discord' erst eintragen, wenn der Provider dort aktiv ist (Anleitung: docs/supabase-setup.md).
-export const LOGIN_PROVIDERS = ['google'];
+export const LOGIN_PROVIDERS = ['google', 'discord'];

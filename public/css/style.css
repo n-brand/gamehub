@@ -2196,3 +2196,7 @@ html.fs-lock, html.fs-lock body { overflow: hidden; overscroll-behavior: none; }
 .legal a { color: inherit; }
 .legal mark { padding: 0 4px; border-radius: 4px; background: var(--yellow); color: var(--on-accent); }
 .legal-date { margin-top: 28px !important; color: var(--muted); }
+
+/* Auswahl des Anmelde-Anbieters (Google, Discord) */
+.login-choices { display: flex; flex-direction: column; gap: 10px; width: min(100%, 280px); margin-inline: auto; }
+.login-choices .btn { width: 100%; justify-content: center; }
