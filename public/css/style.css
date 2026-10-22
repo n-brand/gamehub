@@ -2182,11 +2182,13 @@ html.fs-lock, html.fs-lock body { overflow: hidden; overscroll-behavior: none; }
   font-size: 0.95rem;
   font-weight: 700;
 }
-.site-footer nav { display: flex; gap: 20px; }
+.site-footer nav { display: flex; flex-wrap: wrap; gap: 6px 20px; }
 .site-footer a { color: var(--muted); text-decoration: none; }
 .site-footer a:hover { color: var(--navy); text-decoration: underline; }
 @media (max-width: 720px) {
-  .site-footer { justify-content: center; padding: 18px 16px 24px; }
+  /* Handy: untereinander und zentriert, Links umbrechen statt über den Rand zu laufen */
+  .site-footer { flex-direction: column; justify-content: center; gap: 10px; padding: 18px 16px 24px; font-size: 0.9rem; text-align: center; }
+  .site-footer nav { justify-content: center; gap: 6px 16px; }
 }
 
 .legal { max-width: 780px; line-height: 1.6; overflow-wrap: break-word; hyphens: auto; }
