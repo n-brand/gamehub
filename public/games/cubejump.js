@@ -163,7 +163,8 @@ export function stepRun(s, level, dt, held, pressed) {
         return;
       }
     } else if (o.type === 'pad') {
-      if (!s.used[i] && overlaps(s.px, s.py, 1, 1, o.x + 0.1, 0, 0.8, 0.3)) {
+      // Erst wenn die Würfelmitte über der Plattenmitte ist (nicht schon an der Vorderkante), sonst landet man zu kurz
+      if (!s.used[i] && overlaps(s.px + 0.4, s.py, 0.2, 1, o.x + 0.35, 0, 0.3, 0.3)) {
         s.used[i] = 1;
         s.vy = PAD_V;
         s.grounded = false;
