@@ -120,6 +120,23 @@ entfernt die alten Funktionen und legt alles in `gamehub` neu an.
 
 Nach dem Push auf `main` ist alles auch unter <https://n-brand.github.io/gamehub/> aktiv.
 
+## 3b. Discord-Login zusätzlich einrichten (optional)
+
+Der Code ist vorbereitet. Solange `LOGIN_PROVIDERS` in `public/js/config.js` nur `['google']` enthält, ändert sich nichts.
+
+1. <https://discord.com/developers/applications> → **New Application** (Name `GameHub`).
+2. **OAuth2**: Client ID kopieren, **Reset Secret** → Client Secret kopieren (nicht in den Chat oder ins Repo).
+3. Unter **Redirects** die Callback-URL aus Supabase eintragen: `https://<project-ref>.supabase.co/auth/v1/callback`
+   (steht in Supabase unter Authentication → Sign In / Providers → Discord).
+4. Supabase → **Authentication → Sign In / Providers → Discord**: aktivieren, Client ID und Client Secret einfügen, speichern.
+5. In `public/js/config.js` `LOGIN_PROVIDERS = ['google', 'discord']` setzen. Danach öffnet „Anmelden“ eine Auswahl.
+6. `public/datenschutz.html` um einen Abschnitt zur Anmeldung mit Discord ergänzen (Discord Inc. als Anbieter, übermittelt
+   Kennung, Name, E-Mail, Profilbild; Widerruf unter Discord → Einstellungen → Autorisierte Apps), bevor Discord live geht.
+
+Hinweis: Supabase verknüpft Konten mit gleicher bestätigter E-Mail-Adresse automatisch. Wer sich mit Google und Discord
+(gleiche Adresse) anmeldet, landet im selben Spielerkonto. Name und Bild kommen aus den Discord-Angaben (`user_metadata`),
+der Code liest sie schon provider-unabhängig.
+
 ## Gut zu wissen
 
 - **Pausierung:** Kostenlose Supabase-Projekte pausieren nach ca. einer Woche ohne Aktivität. Im Dashboard

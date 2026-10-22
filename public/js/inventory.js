@@ -72,7 +72,7 @@ export function renderInventory(container, { focus = null } = {}) {
         </div>`
       : `
         <div class="page-head"><h1>Inventar</h1><p>Deine Designs, Erfolge und dein Kontostand.</p></div>
-        <div class="page-cta">Melde dich an, um Designs und Erfolge zu sammeln. <button type="button" class="btn btn--primary btn--sm" data-login>Mit Google anmelden</button></div>`;
+        <div class="page-cta">Melde dich an, um Designs und Erfolge zu sammeln. <button type="button" class="btn btn--primary btn--sm" data-login>Anmelden</button></div>`;
     container.innerHTML = `
       <section class="page page--wide inventory">
         ${top}

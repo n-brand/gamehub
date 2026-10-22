@@ -259,7 +259,7 @@ function openDetail(item) {
     let action;
     if (!user) {
       note = 'Melde dich an, um Designs zu kaufen.';
-      action = '<button type="button" class="btn btn--primary" data-login-now>Mit Google anmelden</button>';
+      action = '<button type="button" class="btn btn--primary" data-login-now>Anmelden</button>';
     } else if (have < price) {
       note = `Dir fehlen noch ${amount(price - have)}.`;
       if (!diamonds && profile.diamonds > 0 && eco.state.catalog.packages.length) {
@@ -356,7 +356,7 @@ export function renderShop(container, { item: initialItem = null } = {}) {
           <h1>Shop</h1>
           <p>Designs für deine Spiele – bezahlt mit Coins oder Diamanten.</p>
         </div>
-        ${user ? '' : '<div class="page-cta">Melde dich an, um Coins zu sammeln und Designs zu kaufen. <button type="button" class="btn btn--primary btn--sm" data-login>Mit Google anmelden</button></div>'}
+        ${user ? '' : '<div class="page-cta">Melde dich an, um Coins zu sammeln und Designs zu kaufen. <button type="button" class="btn btn--primary btn--sm" data-login>Anmelden</button></div>'}
         ${offers.length ? `<section class="shop-section shop-offers"><h2 class="page-sub">Angebote</h2>${tiles(offers, { meta: true })}</section>` : ''}
         ${catalog}
         ${exchangeSection()}

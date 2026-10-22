@@ -140,10 +140,25 @@ export function loginPrompt(text) {
   const { el, close } = openModal(`
     <h2>Anmelden</h2>
     <p class="modal-text">${esc(text)}</p>
-    <button type="button" class="btn btn--primary" data-login-now>Mit Google anmelden</button>`);
+    <button type="button" class="btn btn--primary" data-login-now>Anmelden</button>`);
   el.querySelector('[data-login-now]').addEventListener('click', () => {
     close();
     eco.signIn();
+  });
+}
+
+// Auswahl des Anmelde-Anbieters (nur wenn mehrere in config.js stehen)
+const PROVIDER_LABELS = { google: 'Mit Google anmelden', discord: 'Mit Discord anmelden' };
+function chooseLogin() {
+  const { el, close } = openModal(`
+    <h2>Anmelden</h2>
+    <p class="modal-text">Wähle, womit du dich anmelden möchtest.</p>
+    ${eco.loginProviders.map((p) => `<button type="button" class="btn btn--primary" data-provider="${p}">${PROVIDER_LABELS[p] || p}</button>`).join('')}`);
+  el.addEventListener('click', (e) => {
+    const p = e.target.closest('[data-provider]')?.dataset.provider;
+    if (!p) return;
+    close();
+    eco.signIn(p);
   });
 }
 
@@ -171,7 +186,7 @@ function renderAccount() {
   const dot = available ? '<span class="dot" aria-label="Bonus verfügbar"></span>' : '';
   const wheel = `<button type="button" class="icon-btn wheel-btn ${available ? 'has-bonus' : ''}" data-open-wheel title="Täglicher Bonus" aria-label="Täglicher Bonus">${GIFT}${dot}</button>`;
   if (!u) {
-    box.innerHTML = `${wheel}<button type="button" class="btn btn--primary btn--sm" data-login><span class="hide-sm">Mit Google anmelden</span><span class="show-sm">Anmelden</span></button>`;
+    box.innerHTML = `${wheel}<button type="button" class="btn btn--primary btn--sm" data-login>Anmelden</button>`;
     shownCoins = null;
     return;
   }
@@ -239,6 +254,8 @@ export function initEconomyUI() {
         action: { label: 'Anmelden', run: eco.signIn },
         duration: 8000,
       });
+    } else if (e.type === 'choose-login') {
+      chooseLogin();
     } else if (e.type === 'error') {
       toast({ kind: 'toast--error', title: e.message });
     }

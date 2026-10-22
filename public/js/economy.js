@@ -5,7 +5,7 @@
 // Ereignisse: { type: 'state' } | { type: 'reward', coins, record } | { type: 'achievement', name, coins, diamonds }
 //             | { type: 'guest', coins } | { type: 'error', message }
 
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js';
+import { SUPABASE_URL, SUPABASE_ANON_KEY, LOGIN_PROVIDERS } from './config.js';
 import { isFreeItem, priceOf } from './pricing.js';
 
 const SUPABASE_JS = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
@@ -128,15 +128,25 @@ function restoreAfterLogin() {
   }
 }
 
-export async function signIn() {
+export const loginProviders = LOGIN_PROVIDERS;
+
+// provider: 'google' | 'discord'. Ohne Angabe: bei mehreren Anbietern wählt die Oberfläche (Ereignis 'choose-login').
+export async function signIn(provider) {
   if (!client) return;
+  if (typeof provider !== 'string') {
+    if (LOGIN_PROVIDERS.length > 1) {
+      emit({ type: 'choose-login' });
+      return;
+    }
+    provider = LOGIN_PROVIDERS[0] || 'google';
+  }
   try {
     sessionStorage.setItem(AFTER_LOGIN_KEY, location.hash || '#/');
   } catch {
     // Speicher nicht verfügbar – dann landet man nach dem Login auf der Startseite
   }
   const { error } = await client.auth.signInWithOAuth({
-    provider: 'google',
+    provider,
     options: { redirectTo: location.origin + location.pathname + location.search },
   });
   if (error) emit({ type: 'error', message: 'Anmeldung fehlgeschlagen.' });
