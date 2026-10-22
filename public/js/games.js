@@ -18,7 +18,6 @@ export const GAMES = [
     controls: 'Pfeiltasten oder WASD zum Lenken, Leertaste für Pause. Auf dem Handy: wischen oder die Pfeil-Buttons nutzen.',
     theme: { bg: '#aad751', edge: '#4a752c', ink: '#1e3a0f' },
     slots: [{ id: 'snake', label: 'Design' }],
-    badge: 'NEU',
     available: true,
   },
   {
@@ -29,7 +28,6 @@ export const GAMES = [
     description: 'Schiebe alle Kacheln in eine Richtung. Zwei gleiche Zahlen verschmelzen zu ihrer Summe. Schaffst du die 2048-Kachel, bevor das Feld voll ist?',
     controls: 'Pfeiltasten oder WASD zum Schieben. Auf dem Handy: wischen. Dein Spielstand wird automatisch gespeichert.',
     theme: { bg: '#ffd43b', edge: '#f08c00', ink: '#5c3c00' },
-    badge: 'NEU',
     available: true,
   },
   {
@@ -47,7 +45,6 @@ export const GAMES = [
       { id: 'ultra', name: 'Ultra', sub: 'Kaum zu schlagen', color: '#e03131' },
       { id: 'duo', name: 'Zu zweit', sub: 'An einem Gerät', color: '#4c6ef5' },
     ],
-    badge: 'NEU',
     available: true,
   },
   {
@@ -67,7 +64,6 @@ export const GAMES = [
       { id: 'cubejump-theme', label: 'Theme' },
       { id: 'cubejump-skin', label: 'Würfel' },
     ],
-    badge: 'NEU',
     available: true,
   },
   {
@@ -79,7 +75,6 @@ export const GAMES = [
     controls: 'Maus bewegen und klicken, auf dem Handy ziehen und loslassen. Tastatur: ← → zielen, Leertaste oder ↓ fallen lassen, P pausiert. Dein Spielstand wird automatisch gespeichert. Im Shop gibt es Bälle und Planeten statt Früchten.',
     theme: { bg: '#40c057', edge: '#2b8a3e', ink: '#ffffff' },
     slots: [{ id: 'watermelon', label: 'Design' }],
-    badge: 'NEU',
     available: true,
   },
   {
@@ -95,7 +90,6 @@ export const GAMES = [
       { id: 'medium', name: '20 Karten', sub: '10 Paare', color: '#7950f2' },
       { id: 'hard', name: '30 Karten', sub: '15 Paare', color: '#e64980' },
     ],
-    badge: 'NEU',
     available: true,
   },
   {
@@ -111,7 +105,6 @@ export const GAMES = [
       { id: 'medium', name: 'Mittel', sub: '16 × 16 · 40 Minen', color: '#fab005' },
       { id: 'hard', name: 'Schwer', sub: '30 × 16 · 99 Minen', color: '#e03131' },
     ],
-    badge: 'NEU',
     available: true,
   },
   {
@@ -122,7 +115,6 @@ export const GAMES = [
     description: 'Fallende Blöcke aus vier Feldern: Schieb und dreh sie so, dass volle Reihen entstehen – die verschwinden und bringen Punkte. Vier Reihen auf einmal geben am meisten. Alle 10 Reihen steigt das Level und alles wird schneller.',
     controls: '← → schieben, ↑ oder X drehen, Z andersherum, ↓ schneller fallen, Leertaste sofort fallen lassen, C oder Shift halten, P pausiert. Auf dem Handy gibt es Tasten unter dem Spielfeld.',
     theme: { bg: '#9775fa', edge: '#6741d9', ink: '#ffffff' },
-    badge: 'NEU',
     available: true,
   },
   {
@@ -133,7 +125,6 @@ export const GAMES = [
     description: 'Halte den Ball mit dem Schläger im Spiel und zerschlage alle Steine. Gelbe Steine brauchen zwei Treffer. Fang die fallenden Kapseln für einen breiteren Schläger, mehr Bälle oder ein Extraleben.',
     controls: 'Maus oder ← → bewegen den Schläger, Klick oder Leertaste startet den Ball, P oder Esc pausiert. Wo der Ball den Schläger trifft, bestimmt den Abprallwinkel.',
     theme: { bg: '#ff8787', edge: '#e03131', ink: '#ffffff' },
-    badge: 'NEU',
     available: true,
   },
 ];
