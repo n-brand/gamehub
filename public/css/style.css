@@ -1205,6 +1205,23 @@ html.fs-lock, html.fs-lock body { overflow: hidden; overscroll-behavior: none; }
 @container (max-width: 760px) {
   .cj-field { width: min(100cqi, (100cqh - 170px) * 16 / 9); }
 }
+/* Handy quer (Rahmen niedrig): schmales Bedienfeld links, Spielfeld nimmt die ganze Höhe */
+@container (max-height: 460px) and (min-width: 480px) {
+  .cj { flex-direction: row; gap: 10px; }
+  .cj .gp-panel { width: 112px; flex-direction: column; flex-wrap: nowrap; align-items: stretch; justify-content: center; gap: 6px; }
+  .cj .gp-stats { flex: none; grid-auto-flow: row; grid-template-columns: 1fr; gap: 4px; }
+  .cj .gp-stats .gp-stat { grid-column: auto !important; }
+  .cj .gp-stat { padding: 3px 8px; }
+  .cj .gp-stat span { font-size: 0.55rem; }
+  .cj .gp-stat b { font-size: 0.95rem; }
+  .cj .gp-panel > .btn { padding: 5px 8px; font-size: 0.8rem; }
+  .cj-field { width: min(100cqi - 122px, 100cqh * 16 / 9); border-radius: 12px; }
+}
+@media (orientation: landscape) and (max-height: 480px) {
+  .game-fs:fullscreen .game-frame:has(.cj), .game-fs.is-fs .game-frame:has(.cj) { padding: 8px; }
+  .game-fs:fullscreen .game-frame:has(.cj) ~ .fs-exit, .game-fs.is-fs .game-frame:has(.cj) ~ .fs-exit { top: 8px; left: 8px; right: auto; width: 36px; height: 36px; }
+  .game-fs:fullscreen .game-frame:has(.cj) .gp-panel, .game-fs.is-fs .game-frame:has(.cj) .gp-panel { padding-top: 40px; }
+}
 
 /* ---------- Blockfall ---------- */
 .bf-center {
